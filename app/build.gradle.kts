@@ -40,8 +40,12 @@ android {
 }
 
 dependencies {
-    implementation ("androidx.car.app:app:1.4.0")
-    implementation("androidx.car.app:app-projected:1.4.0")
+    implementation(libs.charty)
+    implementation(libs.ui.graphics) // Để hỗ trợ vẽ đồ họa
+    implementation(libs.androidx.foundation) // Để hỗ trợ gesture zoom, drag
+    implementation(libs.material3) // UI Material 3
+    implementation (libs.androidx.app)
+    implementation(libs.androidx.app.projected)
     implementation (libs.poi.ooxml)
     implementation (libs.androidx.app)
     implementation (libs.play.services.location)
