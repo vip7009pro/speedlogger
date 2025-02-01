@@ -41,6 +41,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.bytebeats.compose.charts)
+    implementation (libs.compose.charts)
     implementation (libs.androidx.lifecycle.livedata.ktx)
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.room.ktx)

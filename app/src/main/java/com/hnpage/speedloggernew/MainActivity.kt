@@ -29,6 +29,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +38,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.MaterialTheme
@@ -45,15 +48,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.hnpage.speedloggernew.global.LocalData
+import ir.ehsannarmani.compose_charts.LineChart
+import ir.ehsannarmani.compose_charts.models.AnimationMode
+import ir.ehsannarmani.compose_charts.models.DrawStyle
+import ir.ehsannarmani.compose_charts.models.GridProperties
+import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
+import ir.ehsannarmani.compose_charts.models.Line
+import ir.ehsannarmani.compose_charts.models.LineProperties
+import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import kotlinx.coroutines.delay
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
@@ -62,26 +76,25 @@ class MainViewModel : ViewModel() {
     private val _locationData = MutableStateFlow<LocationData?>(null)
     val locationData: StateFlow<LocationData?> = _locationData.asStateFlow()
     private val _speedOffset = MutableStateFlow<Float?>(0f)
-    val speedOffset: StateFlow<Float?> =_speedOffset.asStateFlow()
+    val speedOffset: StateFlow<Float?> = _speedOffset.asStateFlow()
 
     fun updateLocation(speed: Float, lat: Double, lng: Double) {
         _locationData.value = LocationData(speed, lat, lng)
     }
+
     fun updateSpeedOffset(offSet: Float) {
         _speedOffset.value = offSet
     }
 }
 
 
-
 class MainActivity : ComponentActivity() {
     private val locationViewModel: LocationViewModel by viewModels()
     private val REQUEST_CODE_STORAGE_PERMISSIONS = 100
+
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_STORAGE_PERMISSIONS) {
@@ -129,16 +142,21 @@ class MainActivity : ComponentActivity() {
         }
         //LocationForegroundService.startService(this)
         setContent {
-            SpeedLoggerNewTheme  { MainScreen(viewModel = viewModel, onStopService = {stopService()}, onOpenExcelLog = {openExcelLog()}, onStartService ={startService()} ) }
+            SpeedLoggerNewTheme {
+                MainScreen(viewModel = viewModel,
+                    onStopService = { stopService() },
+                    onOpenExcelLog = { openExcelLog() },
+                    onStartService = { startService() })
+            }
         }
     }
-
 
 
     private fun startCarAppService() {
         val intent = Intent(this, CarAppService::class.java)
         startService(intent)
     }
+
     private fun isAndroidAutoConnected(): Boolean {
         // Logic kiểm tra kết nối Android Auto (ví dụ: sử dụng CarAppService)
         return true // Tạm thời luôn trả về true, bạn cần thêm logic thực tế
@@ -149,40 +167,40 @@ class MainActivity : ComponentActivity() {
         stopService(intent) // Dừng service
         Log.d("MainActivity", "Service stop requested")
     }
+
     private fun startService() {
         viewModel.speedOffset.value?.let { LocationForegroundService.startService(this, it) }
     }
 
     private fun checkPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestPermissions() {
         if (!checkPermissions()) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                100
+                this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 100
             )
         } else {
             // Khởi động service nếu đã có quyền
             viewModel.speedOffset.value?.let { LocationForegroundService.startService(this, it) }
         }
     }
+
     private fun openExcelLog() {
         val file = File(getExternalFilesDir(null), "speed_history.xlsx")
         if (file.exists()) {
             val uri = FileProvider.getUriForFile(
-                this,
-                "${applicationContext.packageName}.fileprovider", // Định nghĩa FileProvider
+                this, "${applicationContext.packageName}.fileprovider", // Định nghĩa FileProvider
                 file
             )
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                setDataAndType(
+                    uri, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
@@ -191,7 +209,8 @@ class MainActivity : ComponentActivity() {
                 startActivity(intent)
                 Log.d("MainActivity", "Excel file opened")
             } else {
-                Toast.makeText(this, "No app available to open Excel files", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "No app available to open Excel files", Toast.LENGTH_SHORT)
+                    .show()
                 Log.e("MainActivity", "No app available to open Excel files")
             }
         } else {
@@ -245,55 +264,124 @@ fun openExcelFile(context: Context, fileName: String) {
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
-fun MainScreen(viewModel: MainViewModel, onStopService: () -> Unit, onOpenExcelLog: () -> Unit, onStartService: () -> Unit) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    onStopService: () -> Unit,
+    onOpenExcelLog: () -> Unit,
+    onStartService: () -> Unit
+) {
     val locationData by viewModel.locationData.collectAsState()
     val speedOffsetData by viewModel.speedOffset.collectAsState()
     val context = LocalContext.current
+
+    val speedHistory = remember { mutableStateOf(emptyList<Pair<Float, Float>>()) }
+    val listOfValueFromSpeedHistory = remember { mutableStateOf(emptyList<Double>()) }
+
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            speedHistory.value = readSpeedDataFromExcel(context)
+            //get list of speed from speedHistory and save into listOfValueFromSpeedHistory
+            listOfValueFromSpeedHistory.value = emptyList()
+            //reset listOfValueFromSpeedHistory to list of speed from speedHistory
+            speedHistory.value.forEach {
+                listOfValueFromSpeedHistory.value += it.second.toDouble()
+            }
+            //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
+            delay(1000)
+        }
+
+    }
+
+    Log.d("SpeedHistory", speedHistory.value.toString())
+    Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
+
+
     LaunchedEffect(key1 = 1) {
-        val savedOffset: String =  LocalData().getData(context,"speedoffset")
-        if(savedOffset != "") viewModel.updateSpeedOffset(savedOffset.toFloat())
+        val savedOffset: String = LocalData().getData(context, "speedoffset")
+        if (savedOffset != "") viewModel.updateSpeedOffset(savedOffset.toFloat())
         viewModel.speedOffset.value?.let { LocationForegroundService.startService(context, it) }
     }
 
-    Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, modifier = Modifier
-        .padding(16.dp)
-        .fillMaxWidth(1f)) {
-        Text(text = "Speed: ${locationData?.speed?.times(3.6)?.format(2)} km/h", style = MaterialTheme.typography.headlineMedium)
+    Column(
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(1f)
+    ) {
+        Text(
+            text = "Speed: ${locationData?.speed?.times(3.6)?.format(2)} km/h",
+            style = MaterialTheme.typography.headlineMedium
+        )
         Text(text = "Lat: ${locationData?.lat}", style = MaterialTheme.typography.bodyLarge)
         Text(text = "Lng: ${locationData?.lng}", style = MaterialTheme.typography.bodyLarge)
-        Row(horizontalArrangement = Arrangement.Absolute.SpaceAround, modifier = Modifier.fillMaxWidth()) {
-            Button(onClick =  onStartService,colors = ButtonColors(containerColor = Color.Green, contentColor = Color.White, disabledContentColor = Color.Gray, disabledContainerColor = Color.DarkGray )) {
+        Row(
+            horizontalArrangement = Arrangement.Absolute.SpaceAround,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = onStartService, colors = ButtonColors(
+                    containerColor = Color.Green,
+                    contentColor = Color.White,
+                    disabledContentColor = Color.Gray,
+                    disabledContainerColor = Color.DarkGray
+                )
+            ) {
                 Text(text = "START SERVICE", style = TextStyle(color = Color.DarkGray))
             }
-            Button(onClick = onStopService, colors = ButtonColors(containerColor = Color.Red, contentColor = Color.White, disabledContentColor = Color.Gray, disabledContainerColor = Color.DarkGray )) {
+            Button(
+                onClick = onStopService, colors = ButtonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White,
+                    disabledContentColor = Color.Gray,
+                    disabledContainerColor = Color.DarkGray
+                )
+            ) {
                 Text(text = "STOP SERVICE", style = TextStyle(color = Color.White))
             }
         }
         Column {
 
-                speedOffsetData?.let {
-                    Slider(
-                        value = it,
-                        onValueChange = { newValue ->
-                            run {
-                                Log.d("newOffset",newValue.toString())
-                                viewModel.updateSpeedOffset(newValue)
-                                viewModel.speedOffset.value?.let { LocationForegroundService.startService(context, newValue) }
-                                LocalData().saveData(context,"speedoffset",newValue.toString())
+            speedOffsetData?.let {
+                Slider(
+                    value = it, onValueChange = { newValue ->
+                        run {
+                            Log.d("newOffset", newValue.toString())
+                            viewModel.updateSpeedOffset(newValue)
+                            viewModel.speedOffset.value?.let {
+                                LocationForegroundService.startService(
+                                    context, newValue
+                                )
                             }
+                            LocalData().saveData(context, "speedoffset", newValue.toString())
+                        }
 
-                        },
-                        valueRange = -10f..10f, // Adjust range as needed
-                        steps = 200, // Optional: Adds steps for a more granular control
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
-                }
-            Row(horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically,  modifier = Modifier.fillMaxWidth()) {
+                    }, valueRange = -10f..10f, // Adjust range as needed
+                    steps = 200, // Optional: Adds steps for a more granular control
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(text = "Speed Offset: %.2f km/h".format(viewModel.speedOffset.value))
-                Button(onClick = {
-                    viewModel.updateSpeedOffset(0f)
-                    viewModel.speedOffset.value?.let { LocationForegroundService.startService(context, 0f) }
-                }, colors = ButtonColors(containerColor = Color.Gray, contentColor = Color.White, disabledContentColor = Color.Gray, disabledContainerColor = Color.DarkGray )) {
+                Button(
+                    onClick = {
+                        viewModel.updateSpeedOffset(0f)
+                        viewModel.speedOffset.value?.let {
+                            LocationForegroundService.startService(
+                                context, 0f
+                            )
+                        }
+                    }, colors = ButtonColors(
+                        containerColor = Color.Gray,
+                        contentColor = Color.White,
+                        disabledContentColor = Color.Gray,
+                        disabledContainerColor = Color.DarkGray
+                    )
+                ) {
                     Text(text = "RESET OFFSET", style = TextStyle(color = Color.White))
                 }
             }
@@ -301,7 +389,8 @@ fun MainScreen(viewModel: MainViewModel, onStopService: () -> Unit, onOpenExcelL
 
         }
 
-        SpeedChartScreen(context= LocalContext.current)
+        //SpeedChartScreen(context= LocalContext.current)
+        SpeedChartNew(listOfValueFromSpeedHistory.value)
 
         /*Button(onClick = {
             openExcelFile(context, "speed_history.xlsx")
@@ -368,17 +457,18 @@ fun SpeedChartScreen(context: Context) {
     val speedHistory = remember { mutableStateOf(emptyList<Pair<Float, Float>>()) }
 
     LaunchedEffect(Unit) {
-        while(true)
-        {
+        while (true) {
             speedHistory.value = readSpeedDataFromExcel(context)
             delay(1000)
         }
 
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color.White)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val maxSpeed = speedHistory.value.maxOfOrNull { it.second } ?: 100f
             val scaleX = size.width / (speedHistory.value.size + 1)
@@ -394,6 +484,49 @@ fun SpeedChartScreen(context: Context) {
             drawPath(path, Color.Blue, style = Stroke(5f))
         }
     }
+}
+
+val axisProperties = GridProperties.AxisProperties(
+    enabled = true,
+    style = StrokeStyle.Dashed(intervals = floatArrayOf(10f, 10f)),
+    color = SolidColor(Color.Gray),
+    thickness = (.5).dp,
+    lineCount = 5
+)
+
+val lineProperties = LineProperties(
+    enabled = true,
+    style = StrokeStyle.Dashed(intervals = floatArrayOf(10f, 10f)),
+    color = SolidColor(Color.Gray),
+    thickness = (.5).dp,
+)
+val labelHelperProperties = LabelHelperProperties(
+    enabled = true, textStyle = TextStyle.Default.copy(fontSize = 10.sp)
+)
+
+@Composable
+fun SpeedChartNew(data: List<Double>) {
+    Log.d("SpeedChartNewData", data.toString())
+
+    LineChart(modifier = Modifier
+        .fillMaxSize()
+        .padding(horizontal = 22.dp), data =
+        listOf(
+            Line(
+                label = "Speed",
+                values = data,
+                color = SolidColor(Color(0xFF23af92)),
+                firstGradientFillColor = Color(0xFF2BC0A1).copy(alpha = .5f),
+                secondGradientFillColor = Color.Transparent,
+                //strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
+                //gradientAnimationDelay = 1000,
+                drawStyle = DrawStyle.Stroke(width = 2.dp),
+            )
+        )
+    , animationMode = AnimationMode.Together(delayBuilder = {
+        it * 500L
+    }), labelHelperProperties = labelHelperProperties
+    )
 }
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
