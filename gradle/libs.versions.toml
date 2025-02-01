@@ -16,6 +16,8 @@ mpandroidchart = "v3.1.0"
 playServicesLocation = "21.3.0"
 poi = "5.2.5"
 poiOoxml = "5.2.5"
+roomKtx = "2.6.1"
+sqliteKtx = "2.4.0"
 uiGraphics = "1.7.7"
 workRuntimeKtx = "2.10.0"
 storage = "1.5.0"
@@ -25,6 +27,12 @@ androidx-app = { module = "androidx.car.app:app", version.ref = "app" }
 androidx-app-projected = { module = "androidx.car.app:app-projected", version.ref = "app" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
+androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
+androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomKtx" }
+androidx-sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqliteKtx" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 charty = { module = "com.himanshoe:charty", version.ref = "charty" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

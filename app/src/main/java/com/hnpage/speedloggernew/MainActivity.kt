@@ -8,15 +8,12 @@ import android.content.IntentFilter
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import com.hnpage.speedloggernew.ui.theme.SpeedLoggerNewTheme
@@ -38,7 +35,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,16 +45,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import com.himanshoe.charty.common.ChartDataCollection
-import com.himanshoe.charty.common.config.AxisConfig
-import com.himanshoe.charty.common.config.ChartDefaults
-import com.himanshoe.charty.line.config.LineChartColors
-import com.himanshoe.charty.line.config.LineChartDefaults
-import com.himanshoe.charty.line.config.LineConfig
 import kotlinx.coroutines.delay
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
@@ -75,22 +64,8 @@ class MainViewModel : ViewModel() {
 
 
 class MainActivity : ComponentActivity() {
+    private val locationViewModel: LocationViewModel by viewModels()
     private val REQUEST_CODE_STORAGE_PERMISSIONS = 100
-    private fun requestStoragePermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                    arrayOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ),
-                    REQUEST_CODE_STORAGE_PERMISSIONS
-                )
-            }
-        }
-    }
-
-
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -120,6 +95,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,6 +121,8 @@ class MainActivity : ComponentActivity() {
             SpeedLoggerNewTheme  { MainScreen(viewModel = viewModel, onStopService = {stopService()}, onOpenExcelLog = {openExcelLog()}, onStartService ={startService()} ) }
         }
     }
+
+
 
     private fun startCarAppService() {
         val intent = Intent(this, CarAppService::class.java)
@@ -361,20 +339,6 @@ fun SpeedChartScreen(context: Context) {
         }
     }
 }
-
-@Composable
-fun LineChart(
-    dataCollection: ChartDataCollection,
-    modifier: Modifier = Modifier,
-    padding: Dp = 16.dp,
-    axisConfig: AxisConfig = ChartDefaults.axisConfigDefaults(),
-    radiusScale: Float = 0.02f,
-    lineConfig: LineConfig = LineChartDefaults.defaultConfig(),
-    chartColors: LineChartColors = LineChartDefaults.defaultColor(),
-) {
-    //Implementation
-}
-
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 fun Float.format(digits: Int) = "%.${digits}f".format(this)

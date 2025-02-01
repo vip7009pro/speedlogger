@@ -1,8 +1,9 @@
 package com.hnpage.speedloggernew
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
-import android.os.Build
+import android.os.Binder
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
@@ -13,11 +14,14 @@ class LocationForegroundService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var notificationManager: NotificationManager
     private val excelLogger3 = ExcelLogger3(this)
+    private var isAndroidAutoConnected = false
+    private lateinit var locationViewModel: LocationViewModel
 
     private val channelId = "location_service_channel"
     private var currentSpeed = 0f
 
     private val locationCallback = object : LocationCallback() {
+        @SuppressLint("SuspiciousIndentation")
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
             locationResult.lastLocation?.let { location ->
@@ -44,7 +48,16 @@ class LocationForegroundService : Service() {
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        // Khởi tạo ViewModel
+
+    }
     override fun onBind(intent: Intent?): IBinder? = null
+    inner class LocationBinder : Binder() {
+        fun getService(): LocationForegroundService = this@LocationForegroundService
+    }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -75,14 +88,12 @@ class LocationForegroundService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Location Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(
+            channelId,
+            "Location Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun createNotification(speed: Float): Notification {
@@ -118,11 +129,8 @@ class LocationForegroundService : Service() {
 
         fun startService(context: android.content.Context) {
             val intent = Intent(context, LocationForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
     }
+
 }
