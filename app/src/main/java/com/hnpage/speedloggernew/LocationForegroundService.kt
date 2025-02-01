@@ -14,21 +14,23 @@ class LocationForegroundService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var notificationManager: NotificationManager
     private val excelLogger3 = ExcelLogger3(this)
-    private var isAndroidAutoConnected = false
-    private lateinit var locationViewModel: LocationViewModel
-
     private val channelId = "location_service_channel"
     private var currentSpeed = 0f
+    private var currentOffset: Float = 0f
 
     private val locationCallback = object : LocationCallback() {
         @SuppressLint("SuspiciousIndentation")
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
             locationResult.lastLocation?.let { location ->
-                val speedKmh = location.speed * 3.6f
-                currentSpeed = speedKmh
 
-                Log.d("LocationService", "Speed: $speedKmh km/h, Lat: ${location.latitude}, Lng: ${location.longitude}")
+                val speedKmh = (location.speed * 3.6f)
+                currentSpeed = speedKmh + currentOffset
+
+
+                location.speed = currentSpeed/3.6f
+
+                Log.d("LocationService", "Speed: $currentSpeed km/h, Lat: ${location.latitude}, Lng: ${location.longitude}")
 
                 // Gửi broadcast cho Android Auto
                 sendBroadcast(Intent("LOCATION_UPDATE").apply {
@@ -43,7 +45,7 @@ class LocationForegroundService : Service() {
                 excelLogger3.logData(location)
 
                 // Cập nhật notification với tốc độ mới nhất
-                updateNotification(speedKmh)
+                updateNotification(currentSpeed)
             }
         }
     }
@@ -62,6 +64,9 @@ class LocationForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
+        if (intent != null) {
+            currentOffset = intent.getFloatExtra("EXTRA_SPEED_OFFSET", 0f)
+        }
         startForeground(NOTIFICATION_ID, createNotification(currentSpeed))
 
         startLocationUpdates()
@@ -127,8 +132,9 @@ class LocationForegroundService : Service() {
     companion object {
         const val NOTIFICATION_ID = 1234
 
-        fun startService(context: android.content.Context) {
+        fun startService(context: android.content.Context, speedOffset: Float) {
             val intent = Intent(context, LocationForegroundService::class.java)
+            intent.putExtra("EXTRA_SPEED_OFFSET", speedOffset)  // Truyền giá trị speedOffset vào Intent
             context.startForegroundService(intent)
         }
     }
