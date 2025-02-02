@@ -24,6 +24,7 @@ uiGraphics = "1.7.7"
 workRuntimeKtx = "2.10.0"
 storage = "1.5.0"
 ycharts = "2.1.0"
+firebaseVertexai = "16.0.2"
 
 [libraries]
 androidx-app = { module = "androidx.car.app:app", version.ref = "app" }
@@ -61,6 +62,7 @@ androidx-storage = { group = "androidx.test.services", name = "storage", version
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poiOoxml" }
 ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "uiGraphics" }
 ycharts = { module = "co.yml:ycharts", version.ref = "ycharts" }
+firebase-vertexai = { group = "com.google.firebase", name = "firebase-vertexai", version.ref = "firebaseVertexai" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

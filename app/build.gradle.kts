@@ -47,6 +47,7 @@ dependencies {
     implementation (libs.androidx.lifecycle.livedata.ktx)
     implementation (libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.firebase.vertexai)
     testImplementation(libs.androidx.room.testing)
     implementation(libs.androidx.sqlite.ktx)
     //noinspection KaptUsageInsteadOfKsp

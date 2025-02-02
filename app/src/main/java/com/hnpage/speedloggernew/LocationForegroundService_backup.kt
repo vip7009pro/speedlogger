@@ -27,10 +27,10 @@ class LocationForegroundService_backup : Service() {
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
-            Log.d("LocationService", "LocationCallback triggered") // Log khi callback được gọi
+            //Log.d("LocationService", "LocationCallback triggered") // Log khi callback được gọi
 
             locationResult.lastLocation?.let { location ->
-                Log.d("LocationService", "Sending broadcast: Speed=${location.speed}, Lat=${location.latitude}, Lng=${location.longitude}") // Log dữ liệu vị trí
+                //Log.d("LocationService", "Sending broadcast: Speed=${location.speed}, Lat=${location.latitude}, Lng=${location.longitude}") // Log dữ liệu vị trí
 
                 // Gửi broadcast với dữ liệu vị trí
                 sendBroadcast(
@@ -50,7 +50,7 @@ class LocationForegroundService_backup : Service() {
 
         override fun onLocationAvailability(locationAvailability: LocationAvailability) {
             super.onLocationAvailability(locationAvailability)
-            Log.d("LocationService", "Location available: ${locationAvailability.isLocationAvailable}") // Log trạng thái khả dụng của vị trí
+            //Log.d("LocationService", "Location available: ${locationAvailability.isLocationAvailable}") // Log trạng thái khả dụng của vị trí
         }
     }
 

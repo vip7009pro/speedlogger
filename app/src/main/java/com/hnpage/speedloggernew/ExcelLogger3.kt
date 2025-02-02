@@ -32,9 +32,12 @@ class ExcelLogger3(private val context: Context) {
                 createNewFile(resolver, location)
             }
 
-            Log.d("ExcelLogger", "Dữ liệu đã lưu vào Downloads")
+            //Log.d("ExcelLogger", "Dữ liệu đã lưu vào Downloads")
         } catch (e: Exception) {
             Log.e("ExcelLogger", "Lỗi khi ghi file Excel", e)
+            //delete speed_history.xlsx
+            val file = context.getExternalFilesDir(null)?.resolve(fileName)
+            file?.delete()
         }
     }
 

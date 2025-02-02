@@ -3,12 +3,18 @@ package com.hnpage.speedloggernew
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
+import android.location.Location
 import android.os.Binder
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
+import com.hnpage.speedloggernew.db.LocationRepository
+import com.hnpage.speedloggernew.global.DataInterface
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class LocationForegroundService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -17,6 +23,8 @@ class LocationForegroundService : Service() {
     private val channelId = "location_service_channel"
     private var currentSpeed = 0f
     private var currentOffset: Float = 0f
+    private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private lateinit var repository: LocationRepository
 
     private val locationCallback = object : LocationCallback() {
         @SuppressLint("SuspiciousIndentation")
@@ -30,7 +38,7 @@ class LocationForegroundService : Service() {
 
                 location.speed = currentSpeed/3.6f
 
-                Log.d("LocationService", "Speed: $currentSpeed km/h, Lat: ${location.latitude}, Lng: ${location.longitude}")
+                //Log.d("LocationService", "Speed: $currentSpeed km/h, Lat: ${location.latitude}, Lng: ${location.longitude}")
 
                 // Gửi broadcast cho Android Auto
                 sendBroadcast(Intent("LOCATION_UPDATE").apply {
@@ -42,7 +50,16 @@ class LocationForegroundService : Service() {
 
                 // Ghi log vào Excel
                 if(currentSpeed > 1)
-                excelLogger3.logData(location)
+                {
+                    saveLocationToRoom(DataInterface.LocationData2(
+                        timeStamp = System.currentTimeMillis().toString(),
+                        speed = location.speed * 3.6f, // Chuyển đổi sang km/h
+                        latitude = location.latitude,
+                        longitude = location.longitude
+                    ))
+                    //excelLogger3.logData(location)
+                }
+
 
                 // Cập nhật notification với tốc độ mới nhất
                 updateNotification(currentSpeed)
@@ -50,8 +67,22 @@ class LocationForegroundService : Service() {
         }
     }
 
+    private fun saveLocationToRoom(location: DataInterface.LocationData2) {
+        serviceScope.launch {
+            val record = DataInterface.LocationData2(
+                timeStamp = System.currentTimeMillis().toString(),
+                speed = location.speed, // Chuyển đổi sang km/h
+                latitude = location.latitude,
+                longitude = location.longitude
+            )
+            repository.insertSpeedRecord(record)
+        }
+    }
+
+
     override fun onCreate() {
         super.onCreate()
+        repository = LocationRepository(applicationContext)
         // Khởi tạo ViewModel
 
     }

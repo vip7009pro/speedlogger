@@ -29,18 +29,23 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.EaseInOutCubic
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
@@ -48,13 +53,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -71,9 +78,10 @@ import co.yml.charts.ui.linechart.model.LineStyle
 import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
 import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
 import co.yml.charts.ui.linechart.model.ShadowUnderLine
+import com.hnpage.speedloggernew.db.LocationViewModel
+import com.hnpage.speedloggernew.global.DataInterface
 import com.hnpage.speedloggernew.global.LocalData
 import ir.ehsannarmani.compose_charts.LineChart
-import ir.ehsannarmani.compose_charts.models.AnimationMode
 import ir.ehsannarmani.compose_charts.models.DrawStyle
 import ir.ehsannarmani.compose_charts.models.GridProperties
 import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
@@ -83,6 +91,9 @@ import ir.ehsannarmani.compose_charts.models.StrokeStyle
 import kotlinx.coroutines.delay
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainViewModel : ViewModel() {
     private val _locationData = MutableStateFlow<LocationData?>(null)
@@ -154,8 +165,10 @@ class MainActivity : ComponentActivity() {
         }
         //LocationForegroundService.startService(this)
         setContent {
+            val locationViewModel: LocationViewModel by viewModels()
             SpeedLoggerNewTheme {
                 MainScreen(viewModel = viewModel,
+                    lctvm = locationViewModel,
                     onStopService = { stopService() },
                     onOpenExcelLog = { openExcelLog() },
                     onStartService = { startService() })
@@ -278,6 +291,7 @@ fun openExcelFile(context: Context, fileName: String) {
 @Composable
 fun MainScreen(
     viewModel: MainViewModel,
+    lctvm: LocationViewModel,
     onStopService: () -> Unit,
     onOpenExcelLog: () -> Unit,
     onStartService: () -> Unit
@@ -292,22 +306,22 @@ fun MainScreen(
 
 
     LaunchedEffect(Unit) {
-        while (true) {
-            speedHistory.value = readSpeedDataFromExcel(context)
-            //get list of speed from speedHistory and save into listOfValueFromSpeedHistory
-            listOfValueFromSpeedHistory.value = emptyList()
-            //reset listOfValueFromSpeedHistory to list of speed from speedHistory
-            speedHistory.value.forEach {
-                listOfValueFromSpeedHistory.value += it.second.toDouble()
-            }
-            //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
-            delay(1000)
-        }
+        /* while (true) {
+             speedHistory.value = readSpeedDataFromExcel(context)
+             //get list of speed from speedHistory and save into listOfValueFromSpeedHistory
+             listOfValueFromSpeedHistory.value = emptyList()
+             //reset listOfValueFromSpeedHistory to list of speed from speedHistory
+             speedHistory.value.forEach {
+                 listOfValueFromSpeedHistory.value += it.second.toDouble()
+             }
+             //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
+             delay(1000)
+         }*/
 
     }
 
-    Log.d("SpeedHistory", speedHistory.value.toString())
-    Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
+    //Log.d("SpeedHistory", speedHistory.value.toString())
+    //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
 
 
     LaunchedEffect(key1 = 1) {
@@ -323,65 +337,99 @@ fun MainScreen(
             .fillMaxWidth(1f)
     ) {
         Text(
-            text = "Speed: ${locationData?.speed?.times(3.6)?.format(2)} km/h",
-            style = MaterialTheme.typography.headlineMedium
+            text = "${locationData?.speed?.times(3.6)?.format(2)} km/h",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Red
+
         )
-        Text(text = "Lat: ${locationData?.lat}", style = MaterialTheme.typography.bodyLarge)
-        Text(text = "Lng: ${locationData?.lng}", style = MaterialTheme.typography.bodyLarge)
+        Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Lat: ${locationData?.lat}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Blue
+            )
+            Text(
+                text = "Lng: ${locationData?.lng}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color.Blue
+            )
+        }
+
+
         Row(
             horizontalArrangement = Arrangement.Absolute.SpaceAround,
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(
-                onClick = onStartService, colors = ButtonColors(
+                modifier = Modifier
+                    .size(120.dp, 30.dp)
+                    .fillMaxWidth(),
+                onClick = onStartService,
+                colors = ButtonColors(
                     containerColor = Color.Green,
                     contentColor = Color.White,
                     disabledContentColor = Color.Gray,
                     disabledContainerColor = Color.DarkGray
                 )
             ) {
-                Text(text = "START SERVICE", style = TextStyle(color = Color.DarkGray))
+                Text(
+                    text = "START SERVICE",
+                    style = TextStyle(color = Color.DarkGray, fontSize = 10.sp)
+                )
             }
             Button(
-                onClick = onStopService, colors = ButtonColors(
+                modifier = Modifier
+                    .size(120.dp, 30.dp)
+                    .fillMaxWidth(),
+                onClick = onStopService,
+                colors = ButtonColors(
                     containerColor = Color.Red,
                     contentColor = Color.White,
                     disabledContentColor = Color.Gray,
                     disabledContainerColor = Color.DarkGray
                 )
             ) {
-                Text(text = "STOP SERVICE", style = TextStyle(color = Color.White))
+                Text(
+                    text = "STOP SERVICE", style = TextStyle(color = Color.White, fontSize = 10.sp)
+                )
             }
         }
+        Spacer(Modifier.height(10.dp))
         Column {
-
-            speedOffsetData?.let {
-                Slider(
-                    value = it, onValueChange = { newValue ->
+            Row {
+                speedOffsetData?.let { it ->
+                    Slider(value = it, onValueChange = { newValue ->
                         run {
-                            Log.d("newOffset", newValue.toString())
-                            viewModel.updateSpeedOffset(newValue)
-                            viewModel.speedOffset.value?.let {
+
+                            viewModel.updateSpeedOffset(newValue)/*viewModel.speedOffset.value?.let {
                                 LocationForegroundService.startService(
                                     context, newValue
                                 )
                             }
-                            LocalData().saveData(context, "speedoffset", newValue.toString())
+                            LocalData().saveData(context, "speedoffset", newValue.toString())*/
                         }
 
+                    }, onValueChangeFinished = {
+                        //Log.d("newOffset", it.toString())
+                        viewModel.speedOffset.value?.let {
+                            LocationForegroundService.startService(
+                                context, it
+                            )
+                        }
+                        LocalData().saveData(context, "speedoffset", it.toString())
                     }, valueRange = -10f..10f, // Adjust range as needed
-                    steps = 200, // Optional: Adds steps for a more granular control
-                    modifier = Modifier.padding(top = 16.dp)
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Speed Offset: %.2f km/h".format(viewModel.speedOffset.value))
+                        steps = 200, // Optional: Adds steps for a more granular control
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .height(20.dp)
+                            .fillMaxWidth(0.5f)
+                    )
+                }
+                Text(text = "%.2f km/h".format(viewModel.speedOffset.value), fontSize = 10.sp)
                 Button(
-                    onClick = {
+                    modifier = Modifier
+                        .size(100.dp, 30.dp)
+                        .fillMaxWidth(), onClick = {
                         viewModel.updateSpeedOffset(0f)
                         viewModel.speedOffset.value?.let {
                             LocationForegroundService.startService(
@@ -395,17 +443,28 @@ fun MainScreen(
                         disabledContainerColor = Color.DarkGray
                     )
                 ) {
-                    Text(text = "RESET OFFSET", style = TextStyle(color = Color.White))
+                    Text(
+                        text = "RESET",
+                        style = TextStyle(color = Color.White, fontSize = 10.sp),
+                        modifier = Modifier.padding(all= 0.dp)
+                    )
                 }
+
             }
 
 
+
+
+
         }
+        ChartLine3(lctvm)
+        LocationList(lctvm)
+
 
         //SpeedChartScreen(context= LocalContext.current)
         //SpeedChartNew(listOfValueFromSpeedHistory.value)
-        if(speedHistory.value.isNotEmpty())
-        ChartLine2(speedHistory.value)
+        /*if(speedHistory.value.isNotEmpty())
+        ChartLine2(speedHistory.value)*/
 
         /*Button(onClick = {
             openExcelFile(context, "speed_history.xlsx")
@@ -414,6 +473,88 @@ fun MainScreen(
         }*/
     }
 
+}
+
+fun stringToTimestamp(dateString: String): Long {
+    val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    return format.parse(dateString)?.time ?: 0L
+}
+
+@Composable
+fun LocationList(lctViewModel: LocationViewModel) {
+    val dataList = lctViewModel.getAllSpeedRecords().collectAsState(initial = emptyList())
+    val startTime: Long = stringToTimestamp("2025-02-02 00:00:00")
+    val endTime: Long = stringToTimestamp("2025-02-02 23:59:59")
+    //convert string datetime to long timestamp
+
+
+    //val dataList = lctViewModel.getSpeedRecordsInRange(startTime, endTime).collectAsState(initial = emptyList())
+    //Log.d("LocationList", dataList.value.toString())
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Speed Data History",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.DarkGray,
+            fontStyle = FontStyle.Italic
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(dataList.value) { item ->
+                LocationItem(item)
+            }
+
+        }
+    }
+}
+
+fun convertTimestampToDateTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("HH:mm:ss dd-MM-yyyy", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
+@Composable
+fun LocationItem(speedData: DataInterface.LocationData2) {
+    val formattedDate = convertTimestampToDateTime(speedData.timeStamp.toLong())
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(2.dp)
+            .background(Color.White), elevation = CardDefaults.cardElevation()
+    ) {
+        Column(modifier = Modifier.padding(all = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "ID: ${speedData.id}", color = Color.Gray, fontSize = 12.sp)
+                Text(text = formattedDate, color = Color.Gray, fontSize = 12.sp)
+                Text(
+                    text = "${(speedData.speed).format(1)} km/h",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Blue,
+                    fontSize = 12.sp
+                )
+               /* Text(text = "Lat: ${speedData.latitude}", color = Color.Blue, fontSize = 12.sp)
+                Text(text = "Lon: ${speedData.longitude}", color = Color.Blue, fontSize = 12.sp)*/
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()
+            ) {
+
+
+
+            }
+
+
+        }
+    }
 }
 
 
@@ -521,12 +662,12 @@ val labelHelperProperties = LabelHelperProperties(
 
 @Composable
 fun SpeedChartNew(data: List<Double>) {
-    Log.d("SpeedChartNewData", data.toString())
+    //Log.d("SpeedChartNewData", data.toString())
 
-    LineChart(modifier = Modifier
-        .fillMaxSize()
-        .padding(horizontal = 22.dp), data =
-        listOf(
+    LineChart(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 22.dp), data = listOf(
             Line(
                 label = "Speed",
                 values = data,
@@ -537,50 +678,38 @@ fun SpeedChartNew(data: List<Double>) {
                 //gradientAnimationDelay = 1000,
                 drawStyle = DrawStyle.Stroke(width = 2.dp),
             )
-        )
-   /* , animationMode = AnimationMode.Together(delayBuilder = {
-        it * 500L
-    })*/, labelHelperProperties = labelHelperProperties
+        )/* , animationMode = AnimationMode.Together(delayBuilder = {
+             it * 500L
+         })*/, labelHelperProperties = labelHelperProperties
     )
 }
 
 
 @Composable
-fun ChartLine2(speedData: List<Pair<Float,Float>>)
-{
+fun ChartLine2(speedData: List<Pair<Float, Float>>) {
     //convert speedData to list of Point
-    val pointsData: List<Point> = speedData.map { Point(it.first, it.second) }
-    Log.d("datalist point",pointsData.toString())
-    /*val pointsData: List<Point> =
-        listOf(Point(0f, 40f), Point(1f, 90f), Point(2f, 0f), Point(3f, 60f), Point(4f, 10f))*/
+    val pointsData: List<Point> = speedData.map { Point(it.first, it.second) }.takeLast(10)
+    //Log.d("datalist point",pointsData.toString())
+    val maxSpeed = speedData.maxOfOrNull { it.second.toInt() }?.plus(1)
+    val steps = 5
+    //Log.d("steps", steps.toString())
+    //get screen width in dp
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
 
-    val steps = speedData.maxOfOrNull { it.second.toInt() }?.plus(1)
-    Log.d("steps", steps.toString())
+    val xAxisData = AxisData.Builder().axisStepSize(screenWidthDp / 10).backgroundColor(Color.White)
+        .steps(pointsData.size - 1).labelData { i -> i.toString() }.labelAndAxisLinePadding(15.dp)
+        .axisLabelAngle(90f).axisLabelColor(Color.Black).axisLineColor(Color.Black)
+        .axisLabelFontSize(10.sp).shouldDrawAxisLineTillEnd(flag = true).build()
 
-        val xAxisData = AxisData.Builder()
-        .axisStepSize(10.dp)
-        .backgroundColor(Color.White)
-        .steps(pointsData.size - 1)
-        .labelData { i -> i.toString() }
-        .labelAndAxisLinePadding(15.dp)
-        .axisLabelAngle(90f)
-        .axisLabelColor(Color.Black)
-        .axisLineColor(Color.Black)
-        .axisLabelFontSize(5.sp)
-        .shouldDrawAxisLineTillEnd(flag = true)
-        .build()
-
-    val yAxisData = steps?.let {
-        AxisData.Builder()
-        .steps(it)
-        .backgroundColor(Color.White)
-        .labelAndAxisLinePadding(20.dp)
-        .labelData { i -> i.toString()}
-        .build()
+    val yAxisData = steps.let {
+        AxisData.Builder().steps(it).backgroundColor(Color.White).labelAndAxisLinePadding(20.dp)
+            .labelData { i ->
+                val yScale = maxSpeed?.div(steps)
+                (i * yScale!!).toString()
+            }.build()
     }
 
-    val lineChartData = yAxisData?.let {
-        LineChartData(
+    val lineChartData = LineChartData(
         linePlotData = LinePlotData(
             lines = listOf(
                 YMLLine(
@@ -594,22 +723,75 @@ fun ChartLine2(speedData: List<Pair<Float,Float>>)
             ),
         ),
         xAxisData = xAxisData,
-        yAxisData = it,
+        yAxisData = yAxisData,
         gridLines = GridLines(),
         backgroundColor = Color.White,
         isZoomAllowed = true
     )
+
+    if (pointsData.isNotEmpty()) YMLLineChart(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp), lineChartData = lineChartData
+    )
+}
+
+@Composable
+fun ChartLine3(lctViewModel: LocationViewModel) {
+    val dataList = lctViewModel.getAllSpeedRecords().collectAsState(initial = emptyList())
+    //Log.d("chartline3", dataList.value.toString())
+
+
+    //convert speedData to list of Point
+    val pointsData: List<Point> =
+        dataList.value.take(20).map { Point(it.id.toFloat(), it.speed.toFloat()) }
+    //Log.d("datalist point",pointsData.toString())
+    val maxSpeed = dataList.value.take(20).maxOfOrNull { it.speed.toInt() }?.plus(1)
+    val steps = 5
+    //Log.d("steps", steps.toString())
+    //get screen width in dp
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp.dp
+
+    val xAxisData = AxisData.Builder().bottomPadding(100.dp).axisStepSize(screenWidthDp / 25)
+        .backgroundColor(Color.White).steps(pointsData.size - 1).labelData { i ->
+            convertTimestampToDateTime(dataList.value[i].timeStamp.toLong())
+        }.axisLabelAngle(90f).axisLabelColor(Color.Black).axisLineColor(Color.Black)
+        .axisLabelFontSize(5.sp).shouldDrawAxisLineTillEnd(flag = true)
+        .labelAndAxisLinePadding(1.dp).build()
+
+    val yAxisData = steps.let {
+        AxisData.Builder().steps(it).backgroundColor(Color.White).labelAndAxisLinePadding(10.dp)
+            .axisLabelFontSize(10.sp).labelData { i ->
+                val yScale = maxSpeed?.div(steps)
+                (i * yScale!!).toString()
+            }.build()
     }
 
-    if(pointsData.isNotEmpty())
-        lineChartData?.let {
-            YMLLineChart(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-            lineChartData = it
-        )
-        }
+    val lineChartData = LineChartData(
+        linePlotData = LinePlotData(
+            lines = listOf(
+                YMLLine(
+                    dataPoints = pointsData,
+                    LineStyle(color = Color.Green),
+                    IntersectionPoint(radius = 1.dp),
+                    SelectionHighlightPoint(),
+                    ShadowUnderLine(),
+                    SelectionHighlightPopUp()
+                )
+            ),
+        ),
+        xAxisData = xAxisData,
+        yAxisData = yAxisData,
+        gridLines = GridLines(),
+        backgroundColor = Color.White,
+        isZoomAllowed = true
+    )
+
+    if (pointsData.isNotEmpty()) YMLLineChart(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp), lineChartData = lineChartData
+    )
 }
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
