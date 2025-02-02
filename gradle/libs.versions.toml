@@ -23,6 +23,7 @@ sqliteKtx = "2.4.0"
 uiGraphics = "1.7.7"
 workRuntimeKtx = "2.10.0"
 storage = "1.5.0"
+ycharts = "2.1.0"
 
 [libraries]
 androidx-app = { module = "androidx.car.app:app", version.ref = "app" }
@@ -59,6 +60,7 @@ poi = { module = "org.apache.poi:poi", version.ref = "poi" }
 androidx-storage = { group = "androidx.test.services", name = "storage", version.ref = "storage" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poiOoxml" }
 ui-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "uiGraphics" }
+ycharts = { module = "co.yml:ycharts", version.ref = "ycharts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

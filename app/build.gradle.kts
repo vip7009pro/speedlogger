@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    implementation (libs.ycharts)
     implementation(libs.bytebeats.compose.charts)
     implementation (libs.compose.charts)
     implementation (libs.androidx.lifecycle.livedata.ktx)

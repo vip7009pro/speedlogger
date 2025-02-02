@@ -59,6 +59,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import co.yml.charts.axis.AxisData
+import co.yml.charts.ui.linechart.LineChart as YMLLineChart
+import co.yml.charts.ui.linechart.model.Line as YMLLine
+import co.yml.charts.common.model.Point
+import co.yml.charts.ui.linechart.model.GridLines
+import co.yml.charts.ui.linechart.model.IntersectionPoint
+import co.yml.charts.ui.linechart.model.LineChartData
+import co.yml.charts.ui.linechart.model.LinePlotData
+import co.yml.charts.ui.linechart.model.LineStyle
+import co.yml.charts.ui.linechart.model.SelectionHighlightPoint
+import co.yml.charts.ui.linechart.model.SelectionHighlightPopUp
+import co.yml.charts.ui.linechart.model.ShadowUnderLine
 import com.hnpage.speedloggernew.global.LocalData
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.models.AnimationMode
@@ -278,6 +290,7 @@ fun MainScreen(
     val listOfValueFromSpeedHistory = remember { mutableStateOf(emptyList<Double>()) }
 
 
+
     LaunchedEffect(Unit) {
         while (true) {
             speedHistory.value = readSpeedDataFromExcel(context)
@@ -390,7 +403,9 @@ fun MainScreen(
         }
 
         //SpeedChartScreen(context= LocalContext.current)
-        SpeedChartNew(listOfValueFromSpeedHistory.value)
+        //SpeedChartNew(listOfValueFromSpeedHistory.value)
+        if(speedHistory.value.isNotEmpty())
+        ChartLine2(speedHistory.value)
 
         /*Button(onClick = {
             openExcelFile(context, "speed_history.xlsx")
@@ -523,10 +538,78 @@ fun SpeedChartNew(data: List<Double>) {
                 drawStyle = DrawStyle.Stroke(width = 2.dp),
             )
         )
-    , animationMode = AnimationMode.Together(delayBuilder = {
+   /* , animationMode = AnimationMode.Together(delayBuilder = {
         it * 500L
-    }), labelHelperProperties = labelHelperProperties
+    })*/, labelHelperProperties = labelHelperProperties
     )
+}
+
+
+@Composable
+fun ChartLine2(speedData: List<Pair<Float,Float>>)
+{
+    //convert speedData to list of Point
+    val pointsData: List<Point> = speedData.map { Point(it.first, it.second) }
+    Log.d("datalist point",pointsData.toString())
+    /*val pointsData: List<Point> =
+        listOf(Point(0f, 40f), Point(1f, 90f), Point(2f, 0f), Point(3f, 60f), Point(4f, 10f))*/
+
+    val steps = speedData.maxOfOrNull { it.second.toInt() }?.plus(1)
+    Log.d("steps", steps.toString())
+
+        val xAxisData = AxisData.Builder()
+        .axisStepSize(10.dp)
+        .backgroundColor(Color.White)
+        .steps(pointsData.size - 1)
+        .labelData { i -> i.toString() }
+        .labelAndAxisLinePadding(15.dp)
+        .axisLabelAngle(90f)
+        .axisLabelColor(Color.Black)
+        .axisLineColor(Color.Black)
+        .axisLabelFontSize(5.sp)
+        .shouldDrawAxisLineTillEnd(flag = true)
+        .build()
+
+    val yAxisData = steps?.let {
+        AxisData.Builder()
+        .steps(it)
+        .backgroundColor(Color.White)
+        .labelAndAxisLinePadding(20.dp)
+        .labelData { i -> i.toString()}
+        .build()
+    }
+
+    val lineChartData = yAxisData?.let {
+        LineChartData(
+        linePlotData = LinePlotData(
+            lines = listOf(
+                YMLLine(
+                    dataPoints = pointsData,
+                    LineStyle(color = Color.Green),
+                    IntersectionPoint(radius = 1.dp),
+                    SelectionHighlightPoint(),
+                    ShadowUnderLine(),
+                    SelectionHighlightPopUp()
+                )
+            ),
+        ),
+        xAxisData = xAxisData,
+        yAxisData = it,
+        gridLines = GridLines(),
+        backgroundColor = Color.White,
+        isZoomAllowed = true
+    )
+    }
+
+    if(pointsData.isNotEmpty())
+        lineChartData?.let {
+            YMLLineChart(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp),
+            lineChartData = it
+        )
+        }
 }
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
