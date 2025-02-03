@@ -429,13 +429,15 @@ fun MainScreen(
                 Button(
                     modifier = Modifier
                         .size(100.dp, 30.dp)
-                        .fillMaxWidth(), onClick = {
+                        .fillMaxWidth(),
+                    onClick = {
                         viewModel.updateSpeedOffset(0f)
                         viewModel.speedOffset.value?.let {
                             LocationForegroundService.startService(
                                 context, 0f
                             )
                         }
+                        LocalData().saveData(context, "speedoffset", 0.toString())
                     }, colors = ButtonColors(
                         containerColor = Color.Gray,
                         contentColor = Color.White,
@@ -458,7 +460,9 @@ fun MainScreen(
 
         }
         ChartLine3(lctvm)
-        LocationList(lctvm)
+        //LocationList(lctvm)
+        ShowMap(lctvm)
+
 
 
         //SpeedChartScreen(context= LocalContext.current)
@@ -478,6 +482,12 @@ fun MainScreen(
 fun stringToTimestamp(dateString: String): Long {
     val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     return format.parse(dateString)?.time ?: 0L
+}
+@Composable
+fun ShowMap(lctViewModel: LocationViewModel)
+{
+    val dataList = lctViewModel.getAllSpeedRecords().collectAsState(initial = emptyList())
+    MapScreen(dataList.value)
 }
 
 @Composable

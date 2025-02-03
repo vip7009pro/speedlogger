@@ -41,6 +41,8 @@ android {
 }
 
 dependencies {
+    implementation (libs.play.services.maps)
+    implementation (libs.maps.compose)
     implementation (libs.ycharts)
     implementation(libs.bytebeats.compose.charts)
     implementation (libs.compose.charts)
