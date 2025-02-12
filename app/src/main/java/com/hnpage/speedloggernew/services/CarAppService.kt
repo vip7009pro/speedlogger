@@ -1,4 +1,4 @@
-package com.hnpage.speedloggernew
+package com.hnpage.speedloggernew.services
 
 import android.content.BroadcastReceiver
 import android.content.Context

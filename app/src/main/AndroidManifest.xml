@@ -19,6 +19,7 @@
         android:targetSdkVersion="34"
         tools:overrideLibrary="androidx.car.app" />
     <application
+        android:name=".HiltApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -39,7 +40,7 @@
         </provider>
         <service
             android:foregroundServiceType="location"
-            android:name=".LocationForegroundService"
+            android:name=".services.LocationForegroundService"
             android:exported="false">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
@@ -48,7 +49,7 @@
         </service>
         <!-- Service cho Android Auto -->
         <service
-            android:name=".CarAppService"
+            android:name=".services.CarAppService"
             android:exported="true"
             android:permission="android.permission.BIND_CAR_APP_SERVICE">
             <intent-filter>

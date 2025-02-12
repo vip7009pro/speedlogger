@@ -2,7 +2,6 @@ package com.hnpage.speedloggernew.db
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import com.hnpage.speedloggernew.global.DataInterface
 import kotlinx.coroutines.Dispatchers
@@ -15,13 +14,15 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             repository.insertSpeedRecord(record)
         }
-
     }
 
     fun getAllSpeedRecords(): Flow<List<DataInterface.LocationData2>> {
         return repository.getAllSpeedRecords
     }
-    fun getSpeedRecordsInRange(startTime: Long, endTime: Long): Flow<List<DataInterface.LocationData2>> {
+
+    fun getSpeedRecordsInRange(
+        startTime: Long, endTime: Long
+    ): Flow<List<DataInterface.LocationData2>> {
         return repository.getSpeedRecordsInRange(startTime, endTime)
     }
 

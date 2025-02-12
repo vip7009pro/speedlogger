@@ -1,16 +1,13 @@
-package com.hnpage.speedloggernew
+package com.hnpage.speedloggernew.api
 
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import java.io.InputStream
-import java.io.OutputStream
 import java.util.Date
 
 class ExcelLogger3(private val context: Context) {
