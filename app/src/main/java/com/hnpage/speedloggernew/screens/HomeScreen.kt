@@ -1,56 +1,67 @@
 package com.hnpage.speedloggernew.screens
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.hnpage.speedloggernew.global.AppViewModel
-import com.hnpage.speedloggernew.global.LocalNavHostController
+import androidx.navigation.compose.rememberNavController
+import com.hnpage.speedloggernew.navigation.NavRoutes
+import com.hnpage.speedloggernew.navigation.NavigationViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun HomeScreen(viewModel: AppViewModel = hiltViewModel())  {
-    val appState by viewModel.appState.collectAsState()
-    val navController: NavHostController = LocalNavHostController.current
-    viewModel.login("Nguyen Van Hung")
+fun HomeScreen(viewModel: NavigationViewModel = hiltViewModel())  {
+    val navController = rememberNavController()
+    val navigationManager = hiltViewModel<NavigationViewModel>()
+    LaunchedEffect(Unit) {
+        navigationManager.navigationEvent.collectLatest { command ->
+            // Sử dụng navigate với String route và NavOptions
+            navController.navigate(command.destination, command.navOptions)
+        }
+    }
     NavHost(
         navController = navController,
-        startDestination = "screen1"
+        startDestination = NavRoutes.HOME
     ) {
-        composable("screen1") { Screen1() }
-        composable("screen2") { Screen2() }
-        composable("screen3") { Screen3() }
+        composable(NavRoutes.HOME) { Screen1() }
+        composable(NavRoutes.DETAIL) { Screen2() }
+        composable(NavRoutes.SETTINGS) { Screen3() }
     }
 
 }
 
 @Composable
-fun Screen1() {
-    val navController = LocalNavHostController.current
-
-    Button(onClick = { navController.navigate("screen2") }) {
-        Text("Go to Screen 2")
+fun Screen1(viewModel: NavigationViewModel = hiltViewModel()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Button(onClick = { viewModel.navigateTo(NavRoutes.DETAIL) }) {
+            Text("Go to screen2")
+        }
+        Button(onClick = { viewModel.navigateTo(NavRoutes.SETTINGS) }) {
+            Text("Go to screen3")
+        }
     }
 }
 
 @Composable
-fun Screen2() {
-    val navController = LocalNavHostController.current
-
-    Button(onClick = { navController.navigate("screen3") }) {
-        Text("Go to Screen 3")
+fun Screen2(viewModel: NavigationViewModel = hiltViewModel()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Button(onClick = { viewModel.navigateTo(NavRoutes.HOME) }) {
+            Text("Back to Home")
+        }
     }
 }
 
 @Composable
-fun Screen3() {
-    val navController = LocalNavHostController.current
-
-    Button(onClick = { navController.navigate("screen1") }) {
-        Text("Go back to Screen 1")
+fun Screen3(viewModel: NavigationViewModel = hiltViewModel()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Button(onClick = { viewModel.navigateTo(NavRoutes.HOME) }) {
+            Text("Back to Home")
+        }
     }
 }

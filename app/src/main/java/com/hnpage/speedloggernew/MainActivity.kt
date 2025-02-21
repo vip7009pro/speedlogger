@@ -13,17 +13,18 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.hnpage.speedloggernew.db.LocationViewModel
-import com.hnpage.speedloggernew.global.LocalNavHostController
+import com.hnpage.speedloggernew.navigation.NavigationViewModel
+import com.hnpage.speedloggernew.screens.AppScreen
 import com.hnpage.speedloggernew.screens.HomeScreen
 import com.hnpage.speedloggernew.screens.SpeedLogScreens
 import com.hnpage.speedloggernew.services.CarAppService
@@ -33,6 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import javax.inject.Inject
 
 class MainViewModel : ViewModel() {
@@ -53,7 +55,6 @@ class MainViewModel : ViewModel() {
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val REQUEST_CODE_STORAGE_PERMISSIONS = 100
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
 
     @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     override fun onRequestPermissionsResult(
@@ -83,9 +84,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    @Inject
-    lateinit var navHostControllerProvider: dagger.Lazy<NavHostController>
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -109,29 +107,14 @@ class MainActivity : ComponentActivity() {
         //LocationForegroundService.startService(this)
         setContent {
             val locationViewModel: LocationViewModel by viewModels()
-
-            val navController = rememberNavController()
-
-            // Cung cấp NavController cho toàn bộ app
-
             SpeedLoggerNewTheme {
                 //HomeScreen()
                 //AppScreen()
-                CompositionLocalProvider(LocalNavHostController provides navController) {
-                    HomeScreen()
-                }
                 SpeedLogScreens().MainScreen(viewModel = viewModel,
                     lctvm = locationViewModel,
                     onStopService = { stopService() },
                     onStartService = { startService() })
             }
-
-
-            // Inject runtime instance of NavController
-            navHostControllerProvider.get() // Force runtime injection
-
-
-
         }
     }
 
@@ -178,7 +161,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 }
-
 
 
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
