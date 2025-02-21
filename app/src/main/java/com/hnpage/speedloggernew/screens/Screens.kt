@@ -32,7 +32,7 @@ fun AppScreen(viewModel: AppViewModel = hiltViewModel()) {
         } else {
             Text(text = "Please log in")
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { viewModel.login("John Doe") }) {
+            Button(onClick = { viewModel.login("Hung Nguyen Page") }) {
                 Text(text = "Login")
             }
         }

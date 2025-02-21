@@ -45,6 +45,7 @@ class SpeedLogScreens {
         val locationData by viewModel.locationData.collectAsState()
         val speedOffsetData by viewModel.speedOffset.collectAsState()
         val context = LocalContext.current
+        val isShowMap = remember { mutableStateOf(false) }
 
         val speedHistory = remember { mutableStateOf(emptyList<Pair<Float, Float>>()) }
         val listOfValueFromSpeedHistory = remember { mutableStateOf(emptyList<Double>()) }
@@ -199,8 +200,18 @@ class SpeedLogScreens {
                 }
 
                UIComponents().ChartLine3(lctvm)
+                Button(onClick = {
+                    isShowMap.value = !isShowMap.value
+
+                }) {
+                    Text(text = "Show Map")
+                }
                 //LocationList(lctvm)
-                ShowMap(lctvm)
+                if(isShowMap.value== true)
+                {
+                    ShowMap(lctvm)
+                }
+
 
             }
 
