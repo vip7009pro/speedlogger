@@ -1,10 +1,16 @@
 package com.hnpage.speedloggernew.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -30,28 +36,47 @@ fun getSpeedColor(speed: Float): Color {
 
 @Composable
 fun MapScreen(locations: List<DataInterface.LocationData2>) {
+    val showHideMap = remember { mutableStateOf(false) }
     val homelocation = LatLng(21.2098921, 105.8670834) // Một vị trí mặc định
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             locations.lastOrNull()?.toLatLng() ?: homelocation, 15f
         )
     }
+    if(locations.isNotEmpty())
+    {
+        val lastLocation = locations.last()
+        cameraPositionState.move(
+            CameraUpdateFactory.newLatLngZoom(
+                LatLng(lastLocation.latitude, lastLocation.longitude), 15f
+            )
+        )
+    }
+
 
     Column(Modifier.fillMaxSize()) {
-        Button(
-            onClick = {
-                if (locations.isNotEmpty()) {
-                    val lastLocation = locations.last()
-                    cameraPositionState.move(
-                        CameraUpdateFactory.newLatLngZoom(
-                            LatLng(lastLocation.latitude, lastLocation.longitude), 15f
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = {
+                showHideMap.value = !showHideMap.value
+            }) {
+                Text(text="Show Map")
+            }
+            Button(
+                onClick = {
+                    if (locations.isNotEmpty()) {
+                        val lastLocation2 = locations.last()
+                        cameraPositionState.move(
+                            CameraUpdateFactory.newLatLngZoom(
+                                LatLng(lastLocation2.latitude, lastLocation2.longitude), 15f
+                            )
                         )
-                    )
-                }
-            },
-        ) {
-            Text(text = "Focus Last Marker")
+                    }
+                },
+            ) {
+                Text(text = "Focus Last Marker")
+            }
         }
+
         GoogleMap(
             modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState
         ) {

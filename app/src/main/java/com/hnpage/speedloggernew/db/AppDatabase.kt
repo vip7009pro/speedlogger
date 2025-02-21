@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.hnpage.speedloggernew.global.DataInterface
 
-@Database(entities = [DataInterface.LocationData2::class], version = 1)
+@Database(entities = [DataInterface.LocationData2::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun locationDao(): LocationDao

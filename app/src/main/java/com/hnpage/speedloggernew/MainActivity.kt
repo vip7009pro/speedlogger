@@ -15,17 +15,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.LaunchedEffect
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.hnpage.speedloggernew.db.LocationViewModel
-import com.hnpage.speedloggernew.navigation.NavigationViewModel
-import com.hnpage.speedloggernew.screens.AppScreen
-import com.hnpage.speedloggernew.screens.HomeScreen
 import com.hnpage.speedloggernew.screens.SpeedLogScreens
 import com.hnpage.speedloggernew.services.CarAppService
 import com.hnpage.speedloggernew.services.LocationForegroundService
@@ -34,8 +27,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import javax.inject.Inject
 
 class MainViewModel : ViewModel() {
     private val _locationData = MutableStateFlow<LocationData?>(null)

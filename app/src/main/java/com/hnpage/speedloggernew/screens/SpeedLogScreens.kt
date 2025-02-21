@@ -88,7 +88,9 @@ class SpeedLogScreens {
                 color = Color.Red
 
             )
-            Row(horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
                     text = "Lat: ${locationData?.lat}",
                     style = MaterialTheme.typography.bodyLarge,
@@ -136,7 +138,8 @@ class SpeedLogScreens {
                     )
                 ) {
                     Text(
-                        text = "STOP SERVICE", style = TextStyle(color = Color.White, fontSize = 10.sp)
+                        text = "STOP SERVICE",
+                        style = TextStyle(color = Color.White, fontSize = 10.sp)
                     )
                 }
             }
@@ -199,18 +202,8 @@ class SpeedLogScreens {
 
                 }
 
-               UIComponents().ChartLine3(lctvm)
-                Button(onClick = {
-                    isShowMap.value = !isShowMap.value
-
-                }) {
-                    Text(text = "Show Map")
-                }
-                //LocationList(lctvm)
-                if(isShowMap.value== true)
-                {
-                    ShowMap(lctvm)
-                }
+                UIComponents().ChartLine3(lctvm)
+                ShowMap(lctvm)
 
 
             }
@@ -229,6 +222,7 @@ class SpeedLogScreens {
         }
 
     }
+
     @Composable
     fun ShowMap(lctViewModel: LocationViewModel) {
         val dataList = lctViewModel.getAllSpeedRecords().collectAsState(initial = emptyList())
