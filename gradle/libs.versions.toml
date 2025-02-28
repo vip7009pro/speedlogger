@@ -1,5 +1,6 @@
 [versions]
-agp = "8.8.1"
+accompanistPermissions = "0.34.0"
+agp = "8.8.2"
 app = "1.4.0"
 charty = "2.0.0-alpha01"
 composeCharts = "0.1.1"
@@ -33,6 +34,7 @@ ycharts = "2.1.0"
 firebaseVertexai = "16.1.0"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-app = { module = "androidx.car.app:app", version.ref = "app" }
 androidx-app-projected = { module = "androidx.car.app:app-projected", version.ref = "app" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

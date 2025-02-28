@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation (libs.accompanist.permissions)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.hilt.navigation.compose)

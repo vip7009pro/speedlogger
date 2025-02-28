@@ -1,5 +1,7 @@
 package com.hnpage.speedloggernew.screens
 
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,14 +40,16 @@ fun getSpeedColor(speed: Float): Color {
 fun MapScreen(locations: List<DataInterface.LocationData2>) {
     val showHideMap = remember { mutableStateOf(false) }
     val homelocation = LatLng(21.2098921, 105.8670834) // Một vị trí mặc định
+    val alwaysFocusLastLocation = remember { mutableStateOf(true) }
+
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             locations.lastOrNull()?.toLatLng() ?: homelocation, 15f
         )
     }
-    if(locations.isNotEmpty())
+    if(locations.isNotEmpty() && alwaysFocusLastLocation.value)
     {
-        val lastLocation = locations.last()
+        val lastLocation = locations.first()
         cameraPositionState.move(
             CameraUpdateFactory.newLatLngZoom(
                 LatLng(lastLocation.latitude, lastLocation.longitude), 15f
@@ -61,13 +65,15 @@ fun MapScreen(locations: List<DataInterface.LocationData2>) {
             }) {
                 Text(text="Show Map")
             }
-            Button(
+            Button(modifier = Modifier.background(color =if(alwaysFocusLastLocation.value) Color.Green else Color.Red),
                 onClick = {
-                    if (locations.isNotEmpty()) {
-                        val lastLocation2 = locations.last()
+                    alwaysFocusLastLocation.value = !alwaysFocusLastLocation.value
+                    if(locations.isNotEmpty())
+                    {
+                        val lastLocation = locations.first()
                         cameraPositionState.move(
                             CameraUpdateFactory.newLatLngZoom(
-                                LatLng(lastLocation2.latitude, lastLocation2.longitude), 15f
+                                LatLng(lastLocation.latitude, lastLocation.longitude), 15f
                             )
                         )
                     }
@@ -124,6 +130,7 @@ fun MapScreen(locations: List<DataInterface.LocationData2>) {
 
             // Hiển thị các điểm vị trí dưới dạng Marker, nhưng chỉ lấy mẫu
             val sampleStep = max(1, locations.size / 500) // Chỉ hiển thị tối đa 500 điểm
+            Log.d("MapScreen", "Sample step: $sampleStep")
             locations.filterIndexed { index, _ -> index % sampleStep == 0 }.forEach { location ->
                 Marker(
                     state = MarkerState(position = location.toLatLng()),

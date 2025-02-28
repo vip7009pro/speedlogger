@@ -12,6 +12,12 @@ import java.util.Date
 import java.util.Locale
 
 class GlobalFunction {
+    fun getCurrentDate(format: String, locale: Locale = Locale.getDefault()): String {
+        val currentDate = Date()
+        val dateFormat = SimpleDateFormat(format, locale)
+        return dateFormat.format(currentDate)
+    }
+
     fun openExcelFile(context: Context, fileName: String) {
         val contentResolver = context.contentResolver
 

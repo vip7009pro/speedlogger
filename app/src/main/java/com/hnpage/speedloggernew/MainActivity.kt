@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
     private val viewModel: MainViewModel by viewModels()
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
