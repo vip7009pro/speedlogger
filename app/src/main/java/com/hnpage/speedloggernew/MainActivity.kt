@@ -1,5 +1,6 @@
 package com.hnpage.speedloggernew
 
+import CameraScreen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -13,13 +14,16 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import com.hnpage.speedloggernew.db.LocationViewModel
+import com.hnpage.speedloggernew.screens.HS
 import com.hnpage.speedloggernew.screens.SpeedLogScreens
+import com.hnpage.speedloggernew.services.BackgroundService
 import com.hnpage.speedloggernew.services.CarAppService
 import com.hnpage.speedloggernew.services.LocationForegroundService
 import com.hnpage.speedloggernew.ui.theme.SpeedLoggerNewTheme
@@ -27,6 +31,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.opencv.android.OpenCVLoader
 
 class MainViewModel : ViewModel() {
     private val _locationData = MutableStateFlow<LocationData?>(null)
@@ -75,6 +80,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun startServiceBackground() {
+        val serviceIntent = Intent(this, BackgroundService::class.java)
+        startForegroundService(serviceIntent)
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -97,11 +107,53 @@ class MainActivity : ComponentActivity() {
             //Log.d("MainActivity", "CarAppService started")
         }
         //LocationForegroundService.startService(this)
+
+        if (!OpenCVLoader.initDebug()) {
+            Log.e("OpenCV", "Không thể khởi tạo OpenCV trong debug mode")
+            // Nếu cần cho release, đảm bảo file .so đã được nhúng trong jniLibs
+            OpenCVLoader.initLocal()
+        } else {
+            Log.d("OpenCV", "OpenCV khởi tạo thành công")
+        }
+
+        // Yêu cầu quyền camera
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 101)
+        }
+
+        val requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+                if (isGranted) {
+                    startServiceBackground()
+                } else {
+                    // Xử lý khi quyền bị từ chối
+                    finish()
+                }
+            }
+
+        // Kiểm tra và yêu cầu quyền
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            startService()
+        }
+
+
+
+
+
+
+
         setContent {
             val locationViewModel: LocationViewModel by viewModels()
             SpeedLoggerNewTheme {
-                //HomeScreen()
+                //HS().HomeScreen()
                 //AppScreen()
+                /*CameraScreen()*/
                 SpeedLogScreens().MainScreen(viewModel = viewModel,
                     lctvm = locationViewModel,
                     onStopService = { stopService() },

@@ -243,8 +243,8 @@ class SpeedLogScreens {
     @Composable
     fun ShowMap(lctViewModel: LocationViewModel) {
         //get current date with format yyyy-MM-dd
-        var selectedFromDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd HH:mm:ss")) }
-        var selectedToDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd HH:mm:ss")) }
+        var selectedFromDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd 00:00:00")) }
+        var selectedToDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd 23:59:59")) }
         var showDatePicker by remember { mutableStateOf(false) }
         var showTimePicker by remember { mutableStateOf(false) }
         val datePickerState = rememberDatePickerState()
