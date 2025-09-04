@@ -8,23 +8,26 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.BATTERY_STATS"
-        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.BATTERY_STATS" tools:ignore="ProtectedPermissions" />
+
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
+
     <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
     <uses-sdk
         android:minSdkVersion="29"
-        android:targetSdkVersion="34"
+        android:targetSdkVersion="35"
         tools:overrideLibrary="androidx.car.app" />
     <application
         android:name=".HiltApp"
@@ -49,18 +52,15 @@
         <service
             android:name=".services.BackgroundService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false" >
+        </service>
         <service
             android:foregroundServiceType="location"
             android:name=".services.LocationForegroundService"
             android:exported="false">
-            <intent-filter>
-                <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.PROJECTED" />
-            </intent-filter>
         </service>
         <!-- Service cho Android Auto -->
-        <service
+       <!-- <service
             android:name=".services.CarAppService"
             android:exported="true"
             android:permission="android.permission.BIND_CAR_APP_SERVICE">
@@ -68,6 +68,21 @@
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.PROJECTED" />
             </intent-filter>
+        </service>-->
+
+        <service
+            android:name=".car.SpeedLoggerCarAppService"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1" />
+            <meta-data
+                android:name="androidx.car.app.APP_HOST_CONFIGURATION"
+                android:resource="@xml/automotive_app_desc" />
         </service>
 
         <meta-data
@@ -79,7 +94,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.SpeedLoggerNew"
             android:launchMode="singleTask">
             <intent-filter>

@@ -1,6 +1,6 @@
 package com.hnpage.speedloggernew.screens
 
-import CameraScreen
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -64,7 +64,7 @@ class HS : ComponentActivity()  {
                     onStopService = { stopService() },
                     onStartService = { startService() })
             }
-            composable(NavRoutes.SETTINGS) { CameraScreen() }
+            composable(NavRoutes.SETTINGS) {  }
         }
 
     }

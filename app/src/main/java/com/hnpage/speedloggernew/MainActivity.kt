@@ -1,6 +1,6 @@
 package com.hnpage.speedloggernew
 
-import CameraScreen
+//import CameraScreen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -31,7 +31,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.opencv.android.OpenCVLoader
 
 class MainViewModel : ViewModel() {
     private val _locationData = MutableStateFlow<LocationData?>(null)
@@ -108,12 +107,15 @@ class MainActivity : ComponentActivity() {
         }
         //LocationForegroundService.startService(this)
 
-        if (!OpenCVLoader.initDebug()) {
-            Log.e("OpenCV", "Không thể khởi tạo OpenCV trong debug mode")
-            // Nếu cần cho release, đảm bảo file .so đã được nhúng trong jniLibs
-            OpenCVLoader.initLocal()
-        } else {
-            Log.d("OpenCV", "OpenCV khởi tạo thành công")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ),
+                1001
+            )
         }
 
         // Yêu cầu quyền camera

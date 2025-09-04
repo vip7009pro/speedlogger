@@ -23,38 +23,34 @@ import com.hnpage.speedloggernew.R
 import com.hnpage.speedloggernew.api.ExcelLogger3
 import com.hnpage.speedloggernew.db.LocationRepository
 import com.hnpage.speedloggernew.global.DataInterface
+import com.hnpage.speedloggernew.utils.DeviceStatusDetector
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
 class LocationForegroundService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var notificationManager: NotificationManager
+    private lateinit var deviceStatusDetector: DeviceStatusDetector
     private val excelLogger3 = ExcelLogger3(this)
     private val channelId = "location_service_channel"
     private var currentSpeed = 0f
     private var currentOffset: Float = 0f
     private val serviceScope = CoroutineScope(Dispatchers.IO)
     private lateinit var repository: LocationRepository
-
-    /* private val viewModelStore= ViewModelStore()
-     private lateinit var appViewModel: AppViewModel
-     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
- */
+    private var hasLaunchedMainActivity = false // Cờ để tránh mở MainActivity nhiều lần
 
     private val locationCallback = object : LocationCallback() {
         @SuppressLint("SuspiciousIndentation")
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
             locationResult.lastLocation?.let { location ->
-
                 val speedKmh = (location.speed * 3.6f)
                 currentSpeed = speedKmh + currentOffset
                 location.speed = currentSpeed / 3.6f
-
-                //Log.d("LocationService", "Speed: $currentSpeed km/h, Lat: ${location.latitude}, Lng: ${location.longitude}")
 
                 // Gửi broadcast cho Android Auto
                 sendBroadcast(Intent("LOCATION_UPDATE").apply {
@@ -64,21 +60,19 @@ class LocationForegroundService : Service() {
                     `package` = "com.hnpage.speedloggernew"
                 })
 
-                // Ghi log vào Excel
+                // Ghi log vào Excel và lưu vào Room
                 if (currentSpeed > 1) {
                     saveLocationToRoom(
                         DataInterface.LocationData2(
                             timeStamp = System.currentTimeMillis().toString(),
-                            speed = location.speed * 3.6f, // Chuyển đổi sang km/h
+                            speed = location.speed * 3.6f,
                             latitude = location.latitude,
                             longitude = location.longitude
                         )
                     )
-                    //excelLogger3.logData(location)
                 }
 
-
-                // Cập nhật notification với tốc độ mới nhất
+                // Cập nhật notification với tốc độ, trạng thái sạc và Bluetooth
                 updateNotification(currentSpeed)
             }
         }
@@ -88,7 +82,7 @@ class LocationForegroundService : Service() {
         serviceScope.launch {
             val record = DataInterface.LocationData2(
                 timeStamp = System.currentTimeMillis().toString(),
-                speed = location.speed, // Chuyển đổi sang km/h
+                speed = location.speed,
                 latitude = location.latitude,
                 longitude = location.longitude
             )
@@ -96,31 +90,40 @@ class LocationForegroundService : Service() {
         }
     }
 
-
     override fun onCreate() {
         super.onCreate()
-        repository = LocationRepository(applicationContext)/*appViewModel = ViewModelProvider(
-            viewModelStore,
-            ViewModelProvider.NewInstanceFactory()
-        )[AppViewModel::class.java]*/
-        // Khởi tạo ViewModel
-
+        repository = LocationRepository(applicationContext)
+        // Khởi tạo DeviceStatusDetector
+        deviceStatusDetector = DeviceStatusDetector(
+            context = this,
+            targetBluetoothDeviceAddress = "00:14:22:01:23:45", // Thay bằng MAC thực tế
+            targetBluetoothDeviceName = "CAR MULTIMEDIA" // Thay bằng tên thực tế
+        )
+        // Khởi tạo NotificationManager
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        // Theo dõi trạng thái sạc và Bluetooth
+        observeDeviceStatus()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder {
+        return LocationBinder()
+    }
+
     inner class LocationBinder : Binder() {
         fun getService(): LocationForegroundService = this@LocationForegroundService
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
         if (intent != null) {
             currentOffset = intent.getFloatExtra("EXTRA_SPEED_OFFSET", 0f)
         }
         startForeground(NOTIFICATION_ID, createNotification(currentSpeed))
 
+        // Bắt đầu lắng nghe trạng thái từ DeviceStatusDetector
+        deviceStatusDetector.startListening()
+
+        // Bắt đầu lấy vị trí
         startLocationUpdates()
         return START_STICKY
     }
@@ -128,7 +131,9 @@ class LocationForegroundService : Service() {
     private fun startLocationUpdates() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
-            .setMinUpdateIntervalMillis(500).setWaitForAccurateLocation(true).build()
+            .setMinUpdateIntervalMillis(500)
+            .setWaitForAccurateLocation(true)
+            .build()
 
         if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.requestLocationUpdates(
@@ -154,11 +159,25 @@ class LocationForegroundService : Service() {
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Lấy trạng thái sạc và Bluetooth
+        val isCharging = deviceStatusDetector.isCharging.value
+        val isBluetoothConnected = deviceStatusDetector.isBluetoothConnected.value
 
-        return NotificationCompat.Builder(this, channelId).setContentTitle("Tracking Speed")
-            .setContentText("Current Speed: %.1f km/h".format(speed))
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Thay bằng icon của bạn
-            .setPriority(NotificationCompat.PRIORITY_LOW).setContentIntent(pendingIntent).build()
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Tracking Speed")
+            .setContentText(
+                "Speed: %.1f km/h | Charging: %s | Bluetooth: %s".format(
+                    speed,
+                    if (isCharging) "Yes" else "No",
+                    if (isBluetoothConnected) "Connected" else "Disconnected"
+                )
+            )
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .build()
     }
 
     private fun updateNotification(speed: Float) {
@@ -166,8 +185,55 @@ class LocationForegroundService : Service() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
+    private fun observeDeviceStatus() {
+        serviceScope.launch {
+            // Theo dõi trạng thái sạc
+            deviceStatusDetector.isCharging.collectLatest { isCharging ->
+                Log.d("LocationService", "Charging: $isCharging")
+                // Kiểm tra và mở MainActivity nếu một trong hai điều kiện thỏa mãn
+                checkAndLaunchMainActivity()
+            }
+        }
+        serviceScope.launch {
+            // Theo dõi trạng thái Bluetooth
+            deviceStatusDetector.isBluetoothConnected.collectLatest { isConnected ->
+                Log.d("LocationService", "Bluetooth Connected: $isConnected")
+                // Kiểm tra và mở MainActivity nếu một trong hai điều kiện thỏa mãn
+                checkAndLaunchMainActivity()
+            }
+        }
+    }
+
+    private fun checkAndLaunchMainActivity() {
+        val isCharging = deviceStatusDetector.isCharging.value
+        val isBluetoothConnected = deviceStatusDetector.isBluetoothConnected.value
+
+        Log.d("LocationService", "Checking conditions - Charging: $isCharging, Bluetooth: $isBluetoothConnected, HasLaunched: $hasLaunchedMainActivity")
+
+        if ((isCharging || isBluetoothConnected) && !hasLaunchedMainActivity) {
+            Log.d("LocationService", "Launching MainActivity: Charging or Bluetooth connected")
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            try {
+                Log.d("launch","Launch Activity Thanh cong")
+                startActivity(intent)
+                hasLaunchedMainActivity = true
+            } catch (e: Exception) {
+                Log.e("LocationService", "Failed to launch MainActivity: ${e.message}")
+            }
+        } else if (!isCharging && !isBluetoothConnected) {
+            // Reset cờ nếu cả hai điều kiện không còn thỏa mãn
+            hasLaunchedMainActivity = false
+            Log.d("LocationService", "Reset hasLaunchedMainActivity to false")
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        // Dừng lắng nghe DeviceStatusDetector
+        deviceStatusDetector.stopListening()
+        // Dừng cập nhật vị trí
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
@@ -176,11 +242,8 @@ class LocationForegroundService : Service() {
 
         fun startService(context: android.content.Context, speedOffset: Float) {
             val intent = Intent(context, LocationForegroundService::class.java)
-            intent.putExtra(
-                "EXTRA_SPEED_OFFSET", speedOffset
-            )  // Truyền giá trị speedOffset vào Intent
+            intent.putExtra("EXTRA_SPEED_OFFSET", speedOffset)
             context.startForegroundService(intent)
         }
     }
-
 }
