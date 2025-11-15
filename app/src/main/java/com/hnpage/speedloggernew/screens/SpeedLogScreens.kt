@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -67,182 +70,162 @@ class SpeedLogScreens {
         val locationData by viewModel.locationData.collectAsState()
         val speedOffsetData by viewModel.speedOffset.collectAsState()
         val context = LocalContext.current
-        val isShowMap = remember { mutableStateOf(false) }
-
-        val speedHistory = remember { mutableStateOf(emptyList<Pair<Float, Float>>()) }
-        val listOfValueFromSpeedHistory = remember { mutableStateOf(emptyList<Double>()) }
-
-
-
-        LaunchedEffect(Unit) {
-            /* while (true) {
-                 speedHistory.value = readSpeedDataFromExcel(context)
-                 //get list of speed from speedHistory and save into listOfValueFromSpeedHistory
-                 listOfValueFromSpeedHistory.value = emptyList()
-                 //reset listOfValueFromSpeedHistory to list of speed from speedHistory
-                 speedHistory.value.forEach {
-                     listOfValueFromSpeedHistory.value += it.second.toDouble()
-                 }
-                 //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
-                 delay(1000)
-             }*/
-
-        }
-
-        //Log.d("SpeedHistory", speedHistory.value.toString())
-        //Log.d("SpeedList", listOfValueFromSpeedHistory.value.toString())
-
 
         LaunchedEffect(key1 = 1) {
             val savedOffset: String = LocalData().getData(context, "speedoffset")
             if (savedOffset != "") viewModel.updateSpeedOffset(savedOffset.toFloat())
             viewModel.speedOffset.value?.let { LocationForegroundService.startService(context, it) }
         }
+
         Column(
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxWidth(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
         ) {
-            Text(
-                text = "${locationData?.speed?.times(3.6)?.format(2)} km/h",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.Red
-
-            )
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround, modifier = Modifier.fillMaxWidth()
+            // Speed and Location Display Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "Lat: ${locationData?.lat}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Blue
-                )
-                Text(
-                    text = "Lng: ${locationData?.lng}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Blue
-                )
-            }
-
-
-            Row(
-                horizontalArrangement = Arrangement.Absolute.SpaceAround,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Button(
+                Column(
                     modifier = Modifier
-                        .size(120.dp, 30.dp)
-                        .fillMaxWidth(),
-                    onClick = onStartService,
-                    colors = ButtonColors(
-                        containerColor = Color.Green,
-                        contentColor = Color.White,
-                        disabledContentColor = Color.Gray,
-                        disabledContainerColor = Color.DarkGray
-                    )
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "START SERVICE",
-                        style = TextStyle(color = Color.DarkGray, fontSize = 10.sp)
+                        text = "${locationData?.speed?.times(3.6)?.format(2)} km/h",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                }
-                Button(
-                    modifier = Modifier
-                        .size(120.dp, 30.dp)
-                        .fillMaxWidth(),
-                    onClick = onStopService,
-                    colors = ButtonColors(
-                        containerColor = Color.Red,
-                        contentColor = Color.White,
-                        disabledContentColor = Color.Gray,
-                        disabledContainerColor = Color.DarkGray
-                    )
-                ) {
-                    Text(
-                        text = "STOP SERVICE",
-                        style = TextStyle(color = Color.White, fontSize = 10.sp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Column {
-                Row {
-                    speedOffsetData?.let { it ->
-                        Slider(value = it, onValueChange = { newValue ->
-                            run {
-
-                                viewModel.updateSpeedOffset(newValue)/*viewModel.speedOffset.value?.let {
-                                LocationForegroundService.startService(
-                                    context, newValue
-                                )
-                            }
-                            LocalData().saveData(context, "speedoffset", newValue.toString())*/
-                            }
-
-                        }, onValueChangeFinished = {
-                            //Log.d("newOffset", it.toString())
-                            viewModel.speedOffset.value?.let {
-                                LocationForegroundService.startService(
-                                    context, it
-                                )
-                            }
-                            LocalData().saveData(context, "speedoffset", it.toString())
-                        }, valueRange = -10f..10f, // Adjust range as needed
-                            steps = 200, // Optional: Adds steps for a more granular control
-                            modifier = Modifier
-                                .padding(top = 2.dp)
-                                .height(20.dp)
-                                .fillMaxWidth(0.5f)
-                        )
-                    }
-                    Text(text = "%.2f km/h".format(viewModel.speedOffset.value), fontSize = 10.sp)
-                    Button(
-                        modifier = Modifier
-                            .size(100.dp, 30.dp)
-                            .fillMaxWidth(), onClick = {
-                            viewModel.updateSpeedOffset(0f)
-                            viewModel.speedOffset.value?.let {
-                                LocationForegroundService.startService(
-                                    context, 0f
-                                )
-                            }
-                            LocalData().saveData(context, "speedoffset", 0.toString())
-                        }, colors = ButtonColors(
-                            containerColor = Color.Gray,
-                            contentColor = Color.White,
-                            disabledContentColor = Color.Gray,
-                            disabledContainerColor = Color.DarkGray
-                        )
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "RESET",
-                            style = TextStyle(color = Color.White, fontSize = 10.sp),
-                            modifier = Modifier.padding(all = 0.dp)
+                            text = "Lat: ${locationData?.lat?.format(4)}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = "Lng: ${locationData?.lng?.format(4)}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
-
                 }
-
-                UIComponents().ChartLine3(lctvm)
-                ShowMap(lctvm)
-
-
             }
 
+            // Service Control Buttons Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f).height(40.dp).padding(end = 8.dp),
+                        onClick = onStartService,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Green,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(text = "START SERVICE", fontSize = 14.sp)
+                    }
+                    Button(
+                        modifier = Modifier.weight(1f).height(40.dp).padding(start = 8.dp),
+                        onClick = onStopService,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(text = "STOP SERVICE", fontSize = 14.sp)
+                    }
+                }
+            }
 
-            //SpeedChartScreen(context= LocalContext.current)
-            //SpeedChartNew(listOfValueFromSpeedHistory.value)
-            /*if(speedHistory.value.isNotEmpty())
-            ChartLine2(speedHistory.value)*/
+            // Speed Offset Adjustment Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Speed Offset: %.2f km/h".format(viewModel.speedOffset.value),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        speedOffsetData?.let { offset ->
+                            Slider(
+                                value = offset,
+                                onValueChange = { newValue ->
+                                    viewModel.updateSpeedOffset(newValue)
+                                },
+                                onValueChangeFinished = {
+                                    viewModel.speedOffset.value?.let {
+                                        LocationForegroundService.startService(context, it)
+                                        LocalData().saveData(context, "speedoffset", it.toString())
+                                    }
 
-            /*Button(onClick = {
-                openExcelFile(context, "speed_history.xlsx")
-            }) {
-                Text("Open Excel File")
-            }*/
+                                },
+                                valueRange = -10f..10f,
+                                steps = 200,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            modifier = Modifier.width(80.dp).height(36.dp),
+                            onClick = {
+                                viewModel.updateSpeedOffset(0f)
+                                viewModel.speedOffset.value?.let {
+                                    LocationForegroundService.startService(context, 0f)
+                                }
+                                LocalData().saveData(context, "speedoffset", 0.toString())
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Gray,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(text = "RESET", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            // Charts and Map
+            UIComponents().ChartLine3(lctvm)
+            Spacer(Modifier.height(16.dp))
+            ShowMap(lctvm)
         }
-
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
