@@ -57,6 +57,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.layout.systemBarsPadding // Thêm import này
 
 class SpeedLogScreens {
     @SuppressLint("StateFlowValueCalledInComposition")
@@ -80,9 +81,10 @@ class SpeedLogScreens {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .padding(16.dp)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .systemBarsPadding() // Thêm modifier này để tránh bị che bởi thanh thông báo
         ) {
             // Speed and Location Display Card
             Card(

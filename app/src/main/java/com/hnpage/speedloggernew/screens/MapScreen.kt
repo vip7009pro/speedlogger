@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -86,7 +88,7 @@ fun MapScreen(locations: List<DataInterface.LocationData2>) {
         }
 
         GoogleMap(
-            modifier = Modifier.fillMaxSize(), cameraPositionState = cameraPositionState
+            modifier = Modifier.fillMaxWidth().height(500.dp), cameraPositionState = cameraPositionState
         ) {
             // Hiển thị tất cả các điểm đã lưu trong DB
             /*locations.forEach { location ->
@@ -119,8 +121,7 @@ fun MapScreen(locations: List<DataInterface.LocationData2>) {
                 for (i in locations.indices step step) {
                     val start = LatLng(locations[i].latitude, locations[i].longitude)
                     if (i + step < locations.size) {
-                        val end =
-                            LatLng(locations[i + step].latitude, locations[i + step].longitude)
+                        val end = LatLng(locations[i + step].latitude, locations[i + step].longitude)
                         Polyline(
                             points = listOf(start, end),
                             color = getSpeedColor(locations[i].speed),
