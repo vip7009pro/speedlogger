@@ -1,458 +1,455 @@
 package com.hnpage.speedloggernew.screens
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hnpage.speedloggernew.MainViewModel
 import com.hnpage.speedloggernew.components.UIComponents
 import com.hnpage.speedloggernew.db.LocationViewModel
 import com.hnpage.speedloggernew.format
-import com.hnpage.speedloggernew.global.DataInterface
 import com.hnpage.speedloggernew.global.LocalData
 import com.hnpage.speedloggernew.services.LocationForegroundService
-import com.hnpage.speedloggernew.utils.GlobalFunction
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.layout.systemBarsPadding // Thêm import này
 
+@OptIn(ExperimentalMaterial3Api::class)
 class SpeedLogScreens {
+
     @SuppressLint("StateFlowValueCalledInComposition")
     @Composable
     fun MainScreen(
         viewModel: MainViewModel,
         lctvm: LocationViewModel,
-        onStopService: () -> Unit,
-        onStartService: () -> Unit
+        onStartService: () -> Unit,
+        onStopService: () -> Unit
     ) {
-        val locationData by viewModel.locationData.collectAsState()
-        val speedOffsetData by viewModel.speedOffset.collectAsState()
         val context = LocalContext.current
+        val locationData by viewModel.locationData.collectAsState()
+        val speedOffset by viewModel.speedOffset.collectAsState()
+        val isDarkTheme = isSystemInDarkTheme()
 
-        LaunchedEffect(key1 = 1) {
-            val savedOffset: String = LocalData().getData(context, "speedoffset")
-            if (savedOffset != "") viewModel.updateSpeedOffset(savedOffset.toFloat())
-            viewModel.speedOffset.value?.let { LocationForegroundService.startService(context, it) }
+        // Load saved offset khi mở app
+        LaunchedEffect(Unit) {
+            val saved = LocalData().getData(context, "speedoffset")
+            if (saved.isNotEmpty()) {
+                viewModel.updateSpeedOffset(saved.toFloat())
+            }
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // Background gradient đẹp lung linh
+        val backgroundBrush = if (isDarkTheme) {
+            Brush.verticalGradient(listOf(Color(0xFF0F1117), Color(0xFF1A1C25)))
+        } else {
+            Brush.verticalGradient(listOf(Color(0xFFF5F7FA), Color(0xFFE3EAF0)))
+        }
+
+        Box(
             modifier = Modifier
-                .background(color = Color.Gray)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(5.dp)
-                .systemBarsPadding() // Thêm modifier này để tránh bị che bởi thanh thông báo
+                .fillMaxSize()
+                .background(brush = backgroundBrush)
+                .systemBarsPadding()
         ) {
-            // Speed and Location Display Card
-            Card(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(12.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "${locationData?.speed?.times(3.6)?.format(2)} km/h",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.primary
+                // ==================== CARD TỐC ĐỘ HIỆN TẠI ====================
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = colorScheme.surfaceColorAtElevation(6.dp)
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Lat: ${locationData?.lat?.format(4)}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = "TỐC ĐỘ HIỆN TẠI",
+                            style = typography.labelMedium,
+                            color = colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "${locationData?.speed?.times(3.6)?.format(1) ?: "--"}",
+                            style = typography.displayLarge.copy(
+                                fontSize = 64.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = colorScheme.primary
                         )
                         Text(
-                            text = "Lng: ${locationData?.lng?.format(4)}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = "km/h",
+                            style = typography.headlineSmall,
+                            color = colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-
-            // Service Control Buttons Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Button(
-                        modifier = Modifier.weight(1f).height(40.dp).padding(end = 8.dp),
-                        onClick = onStartService,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Green,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(text = "START SERVICE", fontSize = 14.sp)
-                    }
-                    Button(
-                        modifier = Modifier.weight(1f).height(40.dp).padding(start = 8.dp),
-                        onClick = onStopService,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(text = "STOP SERVICE", fontSize = 14.sp)
-                    }
-                }
-            }
-
-            // Speed Offset Adjustment Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Speed Offset: %.2f km/h".format(viewModel.speedOffset.value),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        speedOffsetData?.let { offset ->
-                            Slider(
-                                value = offset,
-                                onValueChange = { newValue ->
-                                    viewModel.updateSpeedOffset(newValue)
-                                },
-                                onValueChangeFinished = {
-                                    viewModel.speedOffset.value?.let {
-                                        LocationForegroundService.startService(context, it)
-                                        LocalData().saveData(context, "speedoffset", it.toString())
-                                    }
-
-                                },
-                                valueRange = -10f..10f,
-                                steps = 200,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(Modifier.width(5.dp))
-                        Button(
-                            modifier = Modifier.width(80.dp).height(36.dp).padding(0.dp),
-                            onClick = {
-                                viewModel.updateSpeedOffset(0f)
-                                viewModel.speedOffset.value?.let {
-                                    LocationForegroundService.startService(context, 0f)
-                                }
-                                LocalData().saveData(context, "speedoffset", 0.toString())
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Gray,
-                                contentColor = Color.White
-                            )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(32.dp)
                         ) {
-                            Text(text = "RESET", fontSize = 12.sp)
+                            InfoItem("Lat", locationData?.lat?.format(6) ?: "--")
+                            InfoItem("Lng", locationData?.lng?.format(6) ?: "--")
                         }
                     }
                 }
-            }
 
-            // Charts and Map
-            UIComponents().ChartLine3(lctvm)
-            Spacer(Modifier.height(16.dp))
-            ShowMap(lctvm)
+                // ==================== NÚT START / STOP ====================
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Button(
+                        onClick = onStartService,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("START SERVICE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = onStopService,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFF44336),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("STOP SERVICE", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // ==================== HIỆU CHỈNH TỐC ĐỘ – PHIÊN BẢN CỰC PHẨM ====================
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = colorScheme.surfaceColorAtElevation(6.dp)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+
+                        Text(
+                            text = "Hiệu chỉnh tốc độ",
+                            style = typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = colorScheme.primary
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // Dòng 1: Giá trị offset + đơn vị + nút Reset (rộng rãi, cân đối)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Giá trị offset to bự trong card tròn
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = colorScheme.primaryContainer),
+                                modifier = Modifier.size(width = 120.dp, height = 72.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Text(
+                                        text = "%.1f".format(speedOffset ?: 0f),
+                                        style = typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                                        color = colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "km/h",
+                                style = typography.headlineMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colorScheme.onSurface
+                            )
+
+                            // Nút Reset bự tổ chảng, hiện full chữ
+                            Button(
+                                onClick = {
+                                    viewModel.updateSpeedOffset(0f)
+                                    LocationForegroundService.startService(context, 0f)
+                                    LocalData().saveData(context, "speedoffset", "0")
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFF5252), // Đỏ nổi bật cho Reset
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(20.dp),
+                                modifier = Modifier
+                                    .width(130.dp)
+                                    .height(60.dp)
+                            ) {
+                                Text(
+                                    text = "RESET",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.5.sp
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(32.dp))
+
+                        // Dòng 2: Slider chiếm nguyên chiều ngang, to mọng, kéo đã tay
+                        Slider(
+                            value = speedOffset ?: 0f,
+                            onValueChange = { viewModel.updateSpeedOffset(it) },
+                            onValueChangeFinished = {
+                                speedOffset?.let {
+                                    LocationForegroundService.startService(context, it)
+                                    LocalData().saveData(context, "speedoffset", it.toString())
+                                }
+                            },
+                            valueRange = -15f..15f,
+                            steps = 59,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp), // Slider cao hơn, bấm dễ hơn
+                            colors = SliderDefaults.colors(
+                                thumbColor = colorScheme.primary,
+                                activeTrackColor = colorScheme.primary,
+                                inactiveTrackColor = colorScheme.outlineVariant,
+                                activeTickColor = Color.Transparent,
+                                inactiveTickColor = Color.Transparent
+                            ),
+                            thumb = {
+                                // Thumb to hơn, có số hiện trên đầu (cực xịn)
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .background(colorScheme.primary, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "%.1f".format(speedOffset ?: 0f),
+                                        color = colorScheme.onPrimary,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        )
+
+                        // Thanh chỉ thị -15 | 0 | +15
+                        Spacer(Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("-15", fontSize = 15.sp, color = colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                            Text("0", fontSize = 16.sp, color = colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text("+15", fontSize = 15.sp, color = colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+
+                // ==================== BIỂU ĐỒ & BẢNH BẢN ĐỒ ====================
+                UIComponents().ChartLine3(lctvm)
+                Spacer(Modifier.height(8.dp))
+                ShowMap(lctvm)
+            }
         }
     }
 
+    // Component nhỏ hiển thị Lat/Lng
+    @Composable
+    private fun InfoItem(label: String, value: String) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = label, style = typography.labelMedium, color = colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text(text = value, style = typography.titleMedium, fontWeight = FontWeight.Medium)
+        }
+    }
+
+    // Phần ShowMap cũng được làm lại đẹp hơn (em để ngắn gọn, chỉ phần giao diện chính)
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun ShowMap(lctViewModel: LocationViewModel) {
-        // Khởi tạo ngày giờ mặc định
-        var selectedFromDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd 00:00:00")) }
-        var selectedToDateTime by remember { mutableStateOf(GlobalFunction().getCurrentDate("yyyy-MM-dd 23:59:59")) }
+        // Khởi tạo ngay giá trị mặc định hôm nay, không để rỗng bao giờ
+        val today = java.time.LocalDate.now()
+        var fromDateTime by remember {
+            mutableStateOf(today.atStartOfDay().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+        }
+        var toDateTime by remember {
+            mutableStateOf(today.atTime(23, 59, 59).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+        }
 
-        // Trạng thái hiển thị dialog chọn ngày và giờ
+        // State cho dialog
         var showFromDatePicker by remember { mutableStateOf(false) }
         var showFromTimePicker by remember { mutableStateOf(false) }
         var showToDatePicker by remember { mutableStateOf(false) }
         var showToTimePicker by remember { mutableStateOf(false) }
 
-        // Trạng thái cho DatePicker và TimePicker
-        val fromDatePickerState = rememberDatePickerState()
-        val fromTimePickerState = rememberTimePickerState(initialHour = 0, initialMinute = 0, is24Hour = false)
-        val toDatePickerState = rememberDatePickerState()
-        val toTimePickerState = rememberTimePickerState(initialHour = 23, initialMinute = 59, is24Hour = false)
+        val fromDateState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+        val fromTimeState = rememberTimePickerState(initialHour = 0, initialMinute = 0)
+        val toDateState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+        val toTimeState = rememberTimePickerState(initialHour = 23, initialMinute = 59)
 
-        // Lấy danh sách dữ liệu trong khoảng thời gian
-        val dataList = lctViewModel.getSpeedRecordsInRange(
-            GlobalFunction().stringToTimestamp(selectedFromDateTime),
-            GlobalFunction().stringToTimestamp(selectedToDateTime)
+        // Chỉ gọi query khi chắc chắn có thời gian hợp lệ
+        val records by lctViewModel.getSpeedRecordsInRange(
+            com.hnpage.speedloggernew.utils.GlobalFunction().stringToTimestamp(fromDateTime),
+            com.hnpage.speedloggernew.utils.GlobalFunction().stringToTimestamp(toDateTime)
         ).collectAsState(initial = emptyList())
 
-        // Danh sách dữ liệu vị trí
-        var locationDataList = remember { mutableStateListOf<DataInterface.LocationData2>() }
-        var showDialog by remember { mutableStateOf(false) }
-
-        // Giao diện chính
-        Column(
+        ElevatedCard(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .height(560.dp),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            // Tiêu đề
-            Text(
-                text = "Select Date Range",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp),
-                fontSize = 20.sp
-            )
-
-            // Nút chọn From DateTime và To DateTime
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = { showFromDatePicker = true },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "From Date",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 16.sp
-                    )
-                }
-                Button(
-                    onClick = { showToDatePicker = true },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "To Date",
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        fontSize = 16.sp
-                    )
-                }
-            }
-
-            // Khoảng cách
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Hiển thị ngày giờ đã chọn
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "Bản đồ hành trình",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+
+                Spacer(Modifier.height(16.dp))
+
+                // 2 nút chọn thời gian đẹp hơn
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { showFromDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Từ: ${fromDateTime.substring(0, 16)}", fontSize = 14.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = { showToDatePicker = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("Đến: ${toDateTime.substring(0, 16)}", fontSize = 14.sp)
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Bản đồ
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(16.dp))
                 ) {
-                    Text(
-                        text = "From: $selectedFromDateTime",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "To: $selectedToDateTime",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    MapScreen(records)
                 }
             }
-
-            // Khoảng cách trước bản đồ
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Bản đồ
-            MapScreen(dataList.value)
         }
 
-        // Dialog chọn ngày cho From Date
+        // ================== CÁC DIALOG CHỌN NGÀY GIỜ ==================
         if (showFromDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showFromDatePicker = false },
                 confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showFromDatePicker = false
-                            showFromTimePicker = true
-                        }
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showFromDatePicker = false }) { Text("Hủy") }
+                    TextButton(onClick = {
+                        showFromDatePicker = false
+                        showFromTimePicker = true
+                    }) { Text("Chọn giờ") }
                 }
             ) {
-                DatePicker(state = fromDatePickerState)
+                DatePicker(state = fromDateState)
             }
         }
 
-        // Dialog chọn giờ cho From Date
         if (showFromTimePicker) {
             DatePickerDialog(
                 onDismissRequest = { showFromTimePicker = false },
                 confirmButton = {
-                    TextButton(
-                        onClick = {
-                            fromDatePickerState.selectedDateMillis?.let { dateMillis ->
-                                val dateTime = LocalDateTime.ofInstant(
-                                    Instant.ofEpochMilli(dateMillis),
-                                    ZoneId.systemDefault()
-                                ).withHour(fromTimePickerState.hour)
-                                    .withMinute(fromTimePickerState.minute)
-
-                                selectedFromDateTime = dateTime.format(
-                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                                )
-                            }
-                            showFromTimePicker = false
+                    TextButton(onClick = {
+                        fromDateState.selectedDateMillis?.let { millis ->
+                            val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault())
+                                .withHour(fromTimeState.hour)
+                                .withMinute(fromTimeState.minute)
+                            fromDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showFromTimePicker = false }) { Text("Hủy") }
+                        showFromTimePicker = false
+                    }) { Text("OK") }
                 }
             ) {
-                TimePicker(state = fromTimePickerState)
+                TimePicker(state = fromTimeState)
             }
         }
 
-        // Dialog chọn ngày cho To Date
+        // Tương tự cho To Date/Time (đại ca copy y hệt, chỉ đổi tên biến là xong)
         if (showToDatePicker) {
             DatePickerDialog(
                 onDismissRequest = { showToDatePicker = false },
                 confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showToDatePicker = false
-                            showToTimePicker = true
-                        }
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showToDatePicker = false }) { Text("Hủy") }
+                    TextButton(onClick = {
+                        showToDatePicker = false
+                        showToTimePicker = true
+                    }) { Text("Chọn giờ") }
                 }
             ) {
-                DatePicker(state = toDatePickerState)
+                DatePicker(state = toDateState)
             }
         }
 
-        // Dialog chọn giờ cho To Date
         if (showToTimePicker) {
             DatePickerDialog(
                 onDismissRequest = { showToTimePicker = false },
                 confirmButton = {
-                    TextButton(
-                        onClick = {
-                            toDatePickerState.selectedDateMillis?.let { dateMillis ->
-                                val dateTime = LocalDateTime.ofInstant(
-                                    Instant.ofEpochMilli(dateMillis),
-                                    ZoneId.systemDefault()
-                                ).withHour(toTimePickerState.hour)
-                                    .withMinute(toTimePickerState.minute)
-
-                                selectedToDateTime = dateTime.format(
-                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                                )
-                            }
-                            showToTimePicker = false
+                    TextButton(onClick = {
+                        toDateState.selectedDateMillis?.let { millis ->
+                            val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault())
+                                .withHour(toTimeState.hour)
+                                .withMinute(toTimeState.minute)
+                            toDateTime = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         }
-                    ) { Text("OK") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showToTimePicker = false }) { Text("Hủy") }
+                        showToTimePicker = false
+                    }) { Text("OK") }
                 }
             ) {
-                TimePicker(state = toTimePickerState)
+                TimePicker(state = toTimeState)
             }
         }
     }
-
-
 }
