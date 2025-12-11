@@ -2,6 +2,7 @@ package com.hnpage.speedloggernew.screens
 
 import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,9 +82,10 @@ class SpeedLogScreens {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .background(color = Color.Gray)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(5.dp)
                 .systemBarsPadding() // Thêm modifier này để tránh bị che bởi thanh thông báo
         ) {
             // Speed and Location Display Card
@@ -202,9 +204,9 @@ class SpeedLogScreens {
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(5.dp))
                         Button(
-                            modifier = Modifier.width(80.dp).height(36.dp),
+                            modifier = Modifier.width(80.dp).height(36.dp).padding(0.dp),
                             onClick = {
                                 viewModel.updateSpeedOffset(0f)
                                 viewModel.speedOffset.value?.let {

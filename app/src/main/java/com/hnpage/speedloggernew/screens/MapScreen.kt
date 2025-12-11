@@ -2,6 +2,7 @@ package com.hnpage.speedloggernew.screens
 
 import android.graphics.drawable.Icon
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -28,6 +30,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.hnpage.speedloggernew.global.DataInterface
+import com.hnpage.speedloggernew.services.LocationUploader
 import com.hnpage.speedloggernew.utils.GlobalFunction
 import kotlin.math.max
 
@@ -87,6 +90,25 @@ fun MapScreen(locations: List<DataInterface.LocationData2>) {
             }
         }
 
+        Button(onClick = {
+            for (location in locations) {
+                LocationUploader.sendLocation2(
+                    location.latitude,
+                    location.longitude,
+                    GlobalFunction().convertTimestampToDateTime2(location.timeStamp.toLong()),
+                    location.speed
+                ) { result ->
+                    when (result) {
+                       /* "success" -> Log.d("GPS", "Đại ca lên server ngon lành!")
+                        "duplicated" -> Log.i("GPS", "Đã gửi rồi, bỏ qua")
+                        "error" -> Log.w("GPS", "Gửi lỗi, sẽ thử lại sau")*/
+                    }
+                }
+            }
+
+        }) {
+            Text(text="Sync Server")
+        }
         GoogleMap(
             modifier = Modifier.fillMaxWidth().height(500.dp), cameraPositionState = cameraPositionState
         ) {

@@ -61,6 +61,10 @@ class GlobalFunction {
         val sdf = SimpleDateFormat("HH:mm:ss dd-MM-yyyy", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+    fun convertTimestampToDateTime2(timestamp: Long): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return sdf.format(Date(timestamp))
+    }
     fun readSpeedDataFromExcel(context: Context): List<Pair<Float, Float>> {
         val speedData = mutableListOf<Pair<Float, Float>>()
 

@@ -62,18 +62,34 @@ class LocationForegroundService : Service() {
 
                 // Ghi log vào Excel và lưu vào Room
                 if (currentSpeed > 1) {
+                    val timeStamp = System.currentTimeMillis().toString()
+
                     saveLocationToRoom(
                         DataInterface.LocationData2(
-                            timeStamp = System.currentTimeMillis().toString(),
+                            timeStamp = timeStamp,
                             speed = location.speed * 3.6f,
                             latitude = location.latitude,
                             longitude = location.longitude
                         )
                     )
+                   /* LocationUploader.sendLocation(
+                        lat = location.latitude,
+                        lng = location.longitude,
+                        timestamp = timeStamp,
+                        speed = location.speed * 3.6f
+                    )*/
+                    LocationUploader.sendLocation2(location.latitude, location.longitude, timeStamp, location.speed * 3.6f) { result ->
+                        when (result) {
+                            "success" -> Log.d("GPS", "Đại ca lên server ngon lành!")
+                            "duplicated" -> Log.i("GPS", "Đã gửi rồi, bỏ qua")
+                            "error" -> Log.w("GPS", "Gửi lỗi, sẽ thử lại sau")
+                        }
+                    }
                 }
 
                 // Cập nhật notification với tốc độ, trạng thái sạc và Bluetooth
                 updateNotification(currentSpeed)
+
             }
         }
     }

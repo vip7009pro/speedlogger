@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation ("androidx.car.app:app:1.7.0")// Thư viện Android Auto
     implementation (libs.guava)
     implementation (libs.coil.compose)
